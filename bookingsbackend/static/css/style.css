@@ -1,0 +1,210 @@
+:root {
+    --darkturquoise: rgb(42, 147, 130);
+}
+
+body {
+    box-sizing: border-box;
+    background-color: rgb(241,241,241);
+    color: darkslategray;
+    font-family: 'Montserrat';
+}
+
+#contentwrapper {
+    padding: 20px;
+}
+
+
+#primarynavwrapper {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom:40px
+}
+
+#primarynav {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style-type: none;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    padding-inline-start: 0px;
+    padding: 0px 40px;
+}
+
+.navitem a {
+    text-decoration: none;
+    color: darkslategray;
+    letter-spacing: 2px;
+}
+
+.navitem a:hover {
+    color: var(--darkturquoise);
+    border-bottom: solid 1px var(--darkturquoise);
+
+}
+
+#navlogo {
+    width: 150px
+}
+
+/* Calendar Styling Starts Here */
+
+#calendar {
+    display: flex;
+    max-width: 100vw;
+    border: solid 1px rgba(33, 35, 51, 1);
+    margin-top: 20px
+}
+
+.calendarbody {
+    overflow-x: scroll;
+} 
+
+#maincalendarheader .calendaritem, .pitchtitle {
+    font-size: 80%;
+    color: white;
+    background-color: darkslategray
+}
+
+#calendarrowtitles {
+    position: sticky;
+}
+
+.calendarrow {
+    display: flex
+}
+
+
+.calendaritem {
+    display: flex;
+    overflow-x: hidden;
+    justify-content: flex-start;
+    align-items: center;
+    min-width: 120px;
+    height: 30px;
+    border: solid 1px darkslategray;
+    padding: 5px;
+}
+
+.calendaritem p {
+    margin: 0px
+}
+
+.calendaritem p {
+    padding: 0px;
+    font-size: 80%
+}
+
+.dateloadbutton {
+    color: var(--darkturquoise);
+    height: 95%;
+    font-size: 50%;
+}
+
+/* Booking pane styling starts here */
+
+#bookingpanewrapper, #paymentdetailswrapper {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color:rgba(33, 35, 51, 0.5);
+}
+
+#bookingpane {
+    position: relative;
+    max-height: 90vh;
+    width: 80%;
+    padding: 30px;
+    background-color: white;
+    border: solid 3px darkslategray;
+    border-radius: 10px;
+    overflow-y: scroll;
+}
+
+.closebutton {
+    cursor: pointer;
+    position: absolute;
+    top: 0px;
+    right: 5px;
+    font-size: 200%;
+    text-align: center;
+}
+
+form * {
+    display: block;
+}
+
+form input {
+    margin-bottom: 15px;
+}
+
+#searchresultsdiv {
+    height: 100px;
+    overflow-y: scroll;
+}
+
+.paymentdetails {
+    position: relative;
+    padding: 30px;
+    background-color: lightgray;
+    border: solid 3px darkslategray;
+    border-radius: 10px;
+}
+
+/* Dashboard Styling Starts Here */
+
+#dashboardwrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    
+}
+
+.dashboarditem {
+    max-width: 500px;
+    min-width: 300px;
+    border: solid 2px black;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 15px;
+}
+
+.dashboarditem a {
+    text-decoration: none;
+    color: darkslategray; 
+}
+
+.dashboarditem:hover {
+    border-color: var(--darkturquoise);
+}
+
+.textsummary {
+    font-size: 125%;
+    width: 100%;
+    text-align: center;
+}
+
+/* Arrivals List Styling Starts Here */
+
+.partydetail {
+    margin: 0px
+}
+
+.overdue {
+    color: red;
+}
+
+.clickable {
+    cursor: pointer;
+}

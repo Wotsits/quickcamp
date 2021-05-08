@@ -1,0 +1,29 @@
+{% extends 'bookingsbackend/template.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="wrapper" id="dashboardwrapper">
+        <div class="dashboarditem" id="arrivalforecast">
+            <h4>Arrivals Forecast</h4>
+            <img class="dashboardimage" src="{% static '/images/arrivalsbytime.png' %}" width=100%>
+        </div>
+        <div class="dashboarditem" id="arrivals">
+            <a href="{% url 'arrivals' %}">
+                <h4>Check-In Summary</h4>
+                <img class="dashboardimage" src="{% static '/images/arrivals.png' %}" width=100%>
+            </a>
+        </div>
+        <div class="dashboarditem" id="income"><!--shows todays income summary-->
+            <h4>Income Summary</h4>
+            <p class="textsummary">£{{paymentsvalue}}</p>
+        </div>
+        <div class="dashboarditem" id="suspiciousactivity"><!--shows payments cancelled or edited in last 7 days-->
+            <h4>Suspicious Activity</h4>
+            <p class="textsummary">{{editedpayments}}</p>
+        </div>
+        <div class="dashboarditem" id="forwardoccupancy"><!--rotates week, month and 6 months occupancy graph-->
+            <h4>Forward Occupancy</h4>
+        </div>
+    </div>
+    <script src="{% static '/js/dashboard.js' %}"></script>
+{% endblock %}

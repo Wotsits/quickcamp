@@ -1,0 +1,64 @@
+{% extends 'bookingsbackend/template.html' %}
+
+
+{% block content %}
+
+    
+    <div class="wrapper" id="arrivalswrapper">
+        <h4>Due Arrivals</h4>
+        <table class="table table-striped">
+            <thead>
+                <th>Surname</th>
+                <th>Departure</th>
+                <th>Party Details</th>
+                <th>Vehicle Reg</th>
+                <th>Check-In</th>
+            </thead>
+            <tbody id="duetable">
+                {% for arrival in duearrivals %}
+                    <tr class="disolvable" style="animation-play-state: paused;">
+                            {% if not arrival.balance == 0 %}
+                                <td onclick=displaybookingpane({{arrival.id}}) class="overdue clickable">{{arrival.guest.surname}}</td>
+                            {% else %}
+                                <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.guest.surname}}</td>
+                            {% endif %}
+                            
+                            <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.end}}</td>
+                            <td onclick=displaybookingpane({{arrival.id}}) class="clickable"><p class="partydetail"><i class="fas fa-male"></i> - {{arrival.adultno}}</p>
+                                <p class="partydetail"><i class="fas fa-child"></i> - {{arrival.childno}}</p>
+                                <p class="partydetail"><i class="fas fa-baby"></i> - {{arrival.infantno}}</p></td>
+                            <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.vehiclereg}}</td>
+                        
+                        <td>
+                            <button type="button" data-instruction="checkin" data-bookingid="{{arrival.id}}" class="btn btn-success" onclick=checkin(this)>Check-in</button>
+                    </tr>
+                {%endfor%}
+            </tbody>
+        </table>
+            
+        <h4>Arrived</h4>
+        <table class="table table-striped">
+            <thead>
+                <th>Surname</th>
+                <th>Departure</th>
+                <th>Party Details</th>
+                <th>Vehicle Reg</th>
+                <th>Check-In</th>
+            </thead>
+            <tbody id="arrivedtable">
+                {% for arrival in checkedinarrivals %}
+                    <tr class="disolvable" style="animation-play-state: paused;">
+                        <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.guest.surname}}</td>
+                        <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.end}}</td>
+                        <td onclick=displaybookingpane({{arrival.id}}) class="clickable"><p class="partydetail"><i class="fas fa-male"></i> - {{arrival.adultno}}</p>
+                            <p class="partydetail"><i class="fas fa-child"></i> - {{arrival.childno}}</p>
+                            <p class="partydetail"><i class="fas fa-baby"></i> - {{arrival.infantno}}</p></td>
+                        <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.vehiclereg}}</td>
+                        <td>
+                            <button type="button" data-instruction="reverse" data-bookingid="{{arrival.id}}" class="btn btn-warning" onclick=checkin(this)>Reverse Check-in</button>
+                    </tr>
+                {%endfor%}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
