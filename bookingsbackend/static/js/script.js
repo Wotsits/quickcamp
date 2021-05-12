@@ -140,7 +140,7 @@ function setupcalendarbody() {
 function fetchbookings() {
     
     //fetch call to servebookings to get all bookings
-    fetch("servebookings", {
+    fetch(`servebookings?start=${datearray[0].toISOString()}&end=${datearray[datearray.length - 1].toISOString()}`, {
         method: "GET"
     })
     .then(response => response.json())
@@ -197,7 +197,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     calendar.append(calendarbody)
     setupcalendarheader()
     setupcalendarbody()
-    fetchbookings()
     loadbackward()
     calendarinfinitescroll()
 
@@ -266,12 +265,14 @@ function loadbackward() {
 
     })
 
-    //fetch the bookings update
-    fetchbookings()
-
     //add the forwardDates array to the beginning of the datearray
     let newdatearray = forwardDates.concat(datearray)
     datearray = newdatearray
+    
+    //fetch the bookings update
+    fetchbookings()
+
+    
 }
 
 
@@ -318,12 +319,14 @@ function loadforward() {
         }
     })
 
-    //fetch the bookings update
-    fetchbookings()
-
     //add the forwardDates array to the beginning of the datearray
     let newdatearray = datearray.concat(forwardDates)
     datearray = newdatearray
+    
+    //fetch the bookings update
+    fetchbookings()
+
+    
 }
 
 

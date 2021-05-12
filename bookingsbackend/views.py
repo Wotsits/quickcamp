@@ -14,6 +14,7 @@ from rest_framework import permissions
 from rest_framework import filters
 from django.utils import timezone
 from datetime import datetime, timedelta, date
+from dateutil import parser
 import json
 import matplotlib.pyplot as plt
 import numpy
@@ -186,7 +187,13 @@ class apiservebookingslist(ListAPIView):
     
     def get_queryset(self):
         site = self.request.user.site
-        return Booking.objects.filter(pitch__site=site)
+        start = parser.parse(self.request.GET['start'])
+        end = parser.parse(self.request.GET['end'])
+        bookingsforsite = Booking.objects.filter(pitch__site=site)
+        queryset1 = bookingsforsite.filter(start__range=[start, end-timedelta(1)])
+        queryset2 = bookingsforsite.filter(end__range=[start+timedelta(1), end])
+        queryset3 = bookingsforsite.filter(start__range=["2001-01-01", start], end__range=[end, "2100-12-31"])
+        return queryset1 | queryset2 | queryset3
 
 class apicreate(CreateAPIView):
     pass
