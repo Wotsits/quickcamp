@@ -16,7 +16,7 @@ class GuestSerializer(serializers.ModelSerializer):
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ['id', 'creationdate', 'lasteditdate', 'value', 'method', 'booking', 'status']
+        fields = ['id', 'creationdate', 'lasteditdate', 'value', 'method', 'booking']
 
 class CommentsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,6 +31,7 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = ['id', 'pitch', 'guest', 'start', 'end', 'adultno', 'childno', 'infantno', 'bookingrate', 'totalpayments', 'balance', 'paymentsbybooking', 'commentsbybooking', 'checkedin', 'locked'] 
+
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:

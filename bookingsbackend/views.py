@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.contrib.auth import logout
+from django.contrib.auth import logout, login, authenticate
 from django.http import JsonResponse, HttpResponse
 from django.forms.models import model_to_dict
 from django.core import serializers
@@ -12,14 +12,14 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView,
 from rest_framework.response import Response
 from rest_framework import permissions
 from rest_framework import filters
-import datedelta
+from django.utils import timezone
 from datetime import datetime, timedelta, date
 import json
 import matplotlib.pyplot as plt
 import numpy
 
 from .forms import BookingForm
-from .models import Booking, Pitch, Guest, Vehicle, Rate, Payment
+from .models import Booking, Pitch, Guest, Vehicle, Rate, Payment, PaymentChange
 from .serializers import BookingSerializer, GuestSerializer, PitchSerializer, RateSerializer, PaymentSerializer
 
 ''' 
@@ -42,12 +42,32 @@ def paymentsupdate(request):
     return redirect(reverse('calendar'))
 
 '''
+def logout_view(request):
+    logout(request)
+    return redirect(reverse("login"))
+
+def login_view(request):
+    if request.method == "GET":
+        return render(request, "accounts/login.html", {})
+    else:
+        print("post request detected")
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            print("user logged in")
+            return redirect(reverse("calendar"))
+        else: 
+            print("incorrect credentials")
+            return redirect(reverse("login"))
 
 
+@login_required
 def calendar(request):
     return render(request, "bookingsbackend/calendar.html")
 
-
+@login_required
 def dashboard(request):
     ###### presents a summary of the day's activity ######
     arrivals = Booking.objects.filter(start=date.today())
@@ -123,7 +143,8 @@ def dashboard(request):
     paymentsvalue = '%.2f' % paymentsvalue
 
     #presents a summary of payments received today
-    editedpayments = Payment.objects.filter(lasteditdate__range=[date.today(), date.today() - datedelta.WEEK])
+    editedpayments = PaymentChange.objects.filter(datestamp__range=[date.today() - timedelta(weeks=2), date.today()])
+    print(editedpayments)
     if len(editedpayments) == 0:
         editedpayments = "Relax, everything's fine"
 
@@ -133,9 +154,8 @@ def dashboard(request):
     })
 
 
-
+@login_required
 def arrivals(request):
-
     allarrivals = Booking.objects.filter(start=date.today())
     duearrivals = allarrivals.filter(checkedin=False).order_by("guest__surname")
     checkedinarrivals = allarrivals.filter(checkedin=True).order_by("guest__surname")
@@ -145,14 +165,7 @@ def arrivals(request):
         "checkedinarrivals": checkedinarrivals
     })
 
-
-def checkinbyqr(request, pk):
-    booking = Booking.objects.get(pk=pk)
-    booking.checkedin = True
-    booking.save()
-    return redirect('viewbooking', pk=booking.id)
-
-
+@login_required
 def viewbooking(request, pk):
     booking = Booking.objects.get(pk=pk)
     return render(request, 'bookingsbackend/bookingdetail.html', {
@@ -161,8 +174,19 @@ def viewbooking(request, pk):
     
 ######### API END POINTS ###########
 
-class apiservelist(ListAPIView):
-    pass
+class apiservepitchlist(ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        site = self.request.user.site
+        return Pitch.objects.filter(site=site)
+
+class apiservebookingslist(ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        site = self.request.user.site
+        return Booking.objects.filter(pitch__site=site)
 
 class apicreate(CreateAPIView):
     pass
@@ -191,6 +215,69 @@ class apicheckinbooking(UpdateAPIView):
         queryset = self.filter_queryset(self.get_queryset())
         obj = queryset.get(pk=pk)
         return obj
+
+def apiamendpayment(request):
+    payload = json.loads(request.body)
+    pk = payload['pk']
+    creationdate = payload['creationdate']
+    value = payload['value']
+    method = payload['method']
+    payment = Payment.objects.get(pk=pk)
+    #obtains original state for payment log entry later
+    originalstate = f'CreationDate = {payment.creationdate}, value = {payment.value}, method = {payment.method}'
+    
+
+    payment.creationdate = creationdate
+    payment.value = value
+    payment.method = method
+    payment.save()
+
+    newstate = f'CreationDate = {payment.creationdate}, value = {payment.value}, method = {payment.method}'
+
+
+    # sum value of payments
+    booking = payment.booking
+    payments = Payment.objects.filter(booking=booking)
+    sum = 0
+    for payment in payments:
+        sum = sum + payment.value
+    booking.totalpayments = sum
+    booking.balance = booking.bookingrate - booking.totalpayments
+    booking.save()
+
+    # create paymentlog entry
+    paymentlogcomment = f'Original State [{originalstate}] /nNew State [{newstate}'
+    entry = PaymentChange(payment=payment.id, comment=paymentlogcomment, user=request.user)
+    entry.save()
+
+    paymentdata = PaymentSerializer(payment)
+    return HttpResponse(paymentdata, status=200, content_type='application/json')
+   
+@login_required
+def apideletepayment(request, pk):
+    
+    payment = Payment.objects.get(pk=pk)
+
+    # create paymentlog entry
+    paymentlogcomment = f'Deleted payment {pk}'
+    entry = PaymentChange(payment=payment.id, comment=paymentlogcomment, user=request.user)
+    entry.save()
+
+    # delete the payment    
+    payment.delete()
+
+    # sum value of payments
+    booking = payment.booking
+    payments = Payment.objects.filter(booking=booking)
+    sum = 0
+    for payment in payments:
+        sum = sum + payment.value
+    booking.totalpayments = sum
+    booking.balance = booking.bookingrate - booking.totalpayments
+    booking.save()
+
+    return HttpResponse(status=200)
+   
 
 def apiserverate(request):
     start = date.fromisoformat(request.GET['start'])

@@ -5,14 +5,29 @@ from django.db.models.fields import CharField
 from django.db.models.fields.related import ManyToManyField
 from datetime import date
 
+class Site(models.Model):
+    name = models.CharField(max_length=255)
+    address1 = models.CharField(max_length=20, default="Address1")
+    address2 = models.CharField(max_length=20, default="Address2")
+    towncity = models.CharField(max_length=20, default="Town/City")
+    county = models.CharField(max_length=20, default="County")
+    postcode = models.CharField(max_length=20, default="AA1 1AA")
+    vatregno = models.CharField(max_length=20, default="GB 00000000")
+    telephone = models.CharField(max_length=20, default="01111 111111")
+    email = models.CharField(max_length=20, default="site@site.com")
+
+    def __str__(self):
+        return f'{self.name}'
+
 class User(AbstractUser):
-    pass
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
 
 class Pitch(models.Model):
     name = models.CharField(max_length=255)
+    site = models.ForeignKey(Site, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'Pitch No {self.name}'
+        return f'Pitch No {self.name} at {self.site.name}'
 
 class Guest(models.Model):
     firstname = models.CharField(max_length=255)
@@ -70,16 +85,20 @@ class Payment(models.Model):
         ('BACS', 'BACS')
     })
     booking = models.ForeignKey(Booking, on_delete=models.PROTECT, related_name="paymentsbybooking")
-    status = models.CharField(max_length=7, choices=[
-        ('Created', 'Created'),
-        ('Updated', 'Updated'),
-        ('Deleted', 'Deleted')
-    ])
-
+    
     def __str__(self):
         return f'Payment {self.id} against booking {self.booking.id}'
 
 class Comment(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="commentsbybooking")
     important = models.BooleanField()
-    comment = models.CharField(max_length=255)
+    comment = models.TextField()
+
+class PaymentChange(models.Model):
+    datestamp = models.DateField(auto_now_add=True)
+    payment = models.IntegerField()
+    comment = models.TextField()
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return f'Payment {self.payment} was altered by user {self.user.username} on {self.datestamp}'

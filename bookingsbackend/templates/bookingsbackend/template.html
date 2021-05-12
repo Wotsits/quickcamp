@@ -15,13 +15,17 @@
 </head>
 <body>
     <div id="contentwrapper">
-        <nav id="primarynavwrapper">
-            <ul id="primarynav">
-                <li class="navitem"><a href='{% url "dashboard" %}'>Dashboard</a></li>
-                <li class="navitem"><a href='{% url "calendar" %}'>Calendar</a></li>
+        <nav id="primarynav">
+            <ul id="primarynavitems">
+                {% if user.is_authenticated %}
+                    <li class="navitem"><a href='{% url "dashboard" %}'>Dashboard</a></li>
+                    <li class="navitem"><a href='{% url "calendar" %}'>Calendar</a></li>
+                {% endif %}
                 <img id="navlogo" src="{% static '/images/logo.png' %}">
-                <li class="navitem"><a href='#'>Reports</a></li>
-                <li class="navitem"><a href='#'>Administration</a></li>
+                {% if user.is_authenticated %}
+                    <li class="navitem"><a href='#'>Reports</a></li>
+                    <li id="navitem-admin" class="navitem"><a href="{% url 'logout'%}">Log Out</a></li>
+                {% endif %}
             </ul>
         </nav>
 

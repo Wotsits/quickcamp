@@ -2,9 +2,18 @@
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
 csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value
+const queryString = window.location.search
+const urlParams = new URLSearchParams(queryString)
+if (urlParams.get("startdate")) {
+    today = new Date(urlParams.get("startdate"))
+} else {
+    today = new Date(Date.now())
+}
+
+document.querySelector('#startdate').value = today.toISOString().slice(0, 10)
+
 
 // initialises date array using today as reference
-const today = Date.now()
 let correcteddate = new Date(today)
 correcteddate.setUTCHours(0, 0, 0, 0)
 correcteddate = Date.parse(correcteddate)
@@ -139,6 +148,7 @@ function fetchbookings() {
         
         // for each booking...
         for (let i = 0; i < data.length; i++) {
+            let bookingid = data[i].id
             let bookingstart = Date.parse(data[i].start)
             let bookingend = Date.parse(data[i].end)
             let bookingpitch = data[i].pitch.toString()
@@ -161,6 +171,7 @@ function fetchbookings() {
                     else {
                         element.style.backgroundColor = "rgb(42, 147, 130)"
                     }
+                    element.setAttribute("data-bookingid", bookingid)
                                         
                     element.setAttribute("onclick", `displaybookingpane(${data[i].id})`)
                     if (parseInt(elementdate) == bookingstart) {
@@ -746,16 +757,18 @@ function loadpaymentdetail(bookingid) {
         paymentdetailstablebody = document.createElement("tbody")
         for (i=0; i<data.length; i++) {
             payment = document.createElement("tr")
+            payment.setAttribute("id", `payment-${data[i].id}`)
             payment.className = "individualpayment"
+            paymentcreationdate = new Date(data[i].creationdate)
             payment.innerHTML = `
-                <td>${data[i].creationdate}</td>
+                <td>${paymentcreationdate.toDateString()}</td>
                 <td>${data[i].id}</td>
                 <td>£${data[i].value}</td>
                 <td>${data[i].method}</td>
-                <td>X</td>
+                <td><i onclick='editpayment("${paymentcreationdate.toISOString().substring(0, 10)}", ${data[i].id}, ${data[i].value}, "${data[i].method}", ${bookingid})' class="fas fa-edit"></i> <i onclick='deletepayment(${data[i].id}, ${bookingid})' class="fas fa-trash-alt"></i></td>
             `
             paymentdetailstablebody.append(payment)
-        }
+            }
 
         paymentdetailslayer.append(paymentdetails)
         paymentdetails.append(paymentdetailstable)
@@ -850,4 +863,66 @@ function checkin(button) {
     })
 }
 
+function editpayment(paymentcreationdate, paymentid, paymentvalue, paymentmethod, bookingid) {
+    payment = document.querySelector(`#payment-${paymentid}`)
+    payment.innerHTML = `
+        <td><input type="date" name="paymentdate" id="editedpaymentdate" value=${paymentcreationdate}></input></td>
+        <td>${paymentid}</td>
+        <td>£<input type="number" step=0.01 id="editedpaymentvalue" value=${paymentvalue}></input></td>
+        <td>
+            <select name="method" id="editedpaymentmethod" value=${paymentmethod}>
+                <option value="Card">Card</option>
+                <option value="Cash">Cash</option>
+                <option value="BACS">BACS</option>
+            </select>
+        </td>
+        <td><i onclick='savepayment(${paymentid}, ${bookingid})' class="fas fa-save"></i>Click to save changes</td>
+        `
+}
 
+function savepayment(paymentid, bookingid) {
+    editedpaymentdate = document.querySelector("#editedpaymentdate").value
+    editedpaymentvalue = document.querySelector("#editedpaymentvalue").value
+    editedpaymentmethod = document.querySelector("#editedpaymentmethod").value
+    
+    payload = {
+        "pk": paymentid,
+        "creationdate": editedpaymentdate,
+        "value": editedpaymentvalue,
+        "method": editedpaymentmethod
+    }
+
+    fetch('amendpayment', {
+        method: "PATCH",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        response.json()
+        if (response.status === 200) {
+            document.querySelector("#paymentdetailswrapper").remove()
+            document.querySelector("#bookingpanewrapper").remove()
+            displaybookingpane(bookingid)
+        }
+        
+    })
+}
+
+function deletepayment(paymentid, bookingid) {
+    fetch(`deletepayment/${paymentid}`, {
+        method: "DELETE",
+        headers: {
+            "X-CSRFToken": csrftoken
+        }
+    })
+    .then (response => {
+        if (response.status === 200) {
+            document.querySelector("#paymentdetailswrapper").remove()
+            document.querySelector("#bookingpanewrapper").remove()
+            displaybookingpane(bookingid)
+        }    
+    })
+}
