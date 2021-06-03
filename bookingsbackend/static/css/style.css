@@ -219,6 +219,10 @@ form input {
     cursor: pointer;
 }
 
+.checkedin {
+    color: green
+}
+
 /* Login Form styling starts here */
 
 #logincontainer form {

@@ -159,6 +159,7 @@ def arrivals(request):
     allarrivals = Booking.objects.filter(start=date.today())
     duearrivals = allarrivals.filter(checkedin=False).order_by("guest__surname")
     checkedinarrivals = allarrivals.filter(checkedin=True).order_by("guest__surname")
+    print(duearrivals)
 
     return render(request, "bookingsbackend/arrivals.html", {
         "duearrivals": duearrivals,
@@ -305,7 +306,7 @@ def apiserveextras(request):
     data = serializers.serialize("json", availableextras)
     return HttpResponse(data, content_type='application/json')
 
-@csrf_exempt
+@login_required
 def apicreatenewbooking(request):
     if request.method == "POST":
         payload = json.loads(request.body)
@@ -323,11 +324,11 @@ def apicreatenewbooking(request):
 
     guest = Guest.objects.get(id=guestid)
     pitch = Pitch.objects.get(id=pitchid)
-    vehreg = Vehicle.objects.get(vehiclereg="NONE")
 
     # catch circumstances where booking made which fouls this booking
     duplicate = False
     try: 
+        # this needs work as it doesn't do what I need it to do.  Only catches exact matches, not bookings that straddle dates.
         Booking.objects.filter(pitch=pitch, arrival=arrival, departure=departure)
         duplicate = True
     except: 
@@ -352,8 +353,8 @@ def apicreatenewbooking(request):
             balance=balance
             )
         newbooking.save()
-        newbooking.vehiclereg.add(vehreg)
 
+        # record a new payment
         payment = Payment(
             value=bookingpaid,
             method=paymentmethod,
@@ -361,8 +362,10 @@ def apicreatenewbooking(request):
         )
         payment.save()
 
+        # count the total number of guests in the party.
         guestnumber = int(adultno) + int(childno) + int(infantno)
         
+        # create a blank party member record for each member of the party to updated later.
         for i in range(guestnumber):
             partymember = PartyMember(
                 firstname="",

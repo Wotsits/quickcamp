@@ -601,6 +601,7 @@ function createguest() {
     fetch("createnewguest", {
         method: "POST",
         headers: {
+            "X-CSRFToken": csrftoken,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
@@ -661,6 +662,9 @@ function createnewbooking() {
     //fetch request to api endpoint
     fetch("createnewbooking", {
         method: "POST",
+        headers: {
+            "X-CSRFToken": csrftoken,
+        },
         body: JSON.stringify(payload)
     })
     .then(response => response.json())
@@ -814,7 +818,12 @@ function sortTable(table) {
     }
 }
 
-
+function displaycheckinsummary(button) {
+    checkinsummarypanewrapper = document.createElement("div")
+    checkinsummarypanewrapper.setAttribute("id", "bookingpanewrapper")
+    body.append(checkinsummarypanewrapper)
+    checkinsummarypane = document.createElement("div")
+}
 
 function checkin(button) {    
     pk = button.dataset.bookingid

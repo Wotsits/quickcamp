@@ -1,9 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.deletion import PROTECT
-from django.db.models.enums import Choices
-from django.db.models.fields import CharField
-from django.db.models.fields.related import ManyToManyField
 from datetime import date
 
 class Site(models.Model):
@@ -23,9 +20,17 @@ class Site(models.Model):
 class User(AbstractUser):
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
 
+class PitchType(models.Model):
+    name = models.CharField(max_length=90)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return f'{self.name} - {self.site.name}'
+
 class Pitch(models.Model):
     name = models.CharField(max_length=255)
-    site = models.ForeignKey(Site, null=True, on_delete=models.CASCADE)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    type = models.ForeignKey(PitchType, on_delete=models.CASCADE)
 
     def __str__(self):
         return f'Pitch No {self.name} at {self.site.name}'
@@ -39,13 +44,6 @@ class Guest(models.Model):
     def __str__(self):
         return f'Guest No {self.id} - {self.firstname} {self.surname}'
 
-class Vehicle(models.Model):
-    vehiclereg = CharField(max_length=7)
-
-    def __str__(self):
-        return f'{self.vehiclereg}'
-
-
 class Booking(models.Model):
     pitch = models.ForeignKey(Pitch, on_delete=models.PROTECT, related_name="bookingsbypitch")
     guest = models.ForeignKey(Guest, on_delete=models.PROTECT)
@@ -54,7 +52,6 @@ class Booking(models.Model):
     adultno = models.PositiveSmallIntegerField()
     childno = models.PositiveSmallIntegerField()
     infantno = models.PositiveSmallIntegerField()
-    vehiclereg = models.ManyToManyField(Vehicle)
     bookingrate = models.FloatField()
     totalpayments = models.FloatField()
     balance = models.FloatField()
@@ -65,10 +62,19 @@ class Booking(models.Model):
     def __str__(self):
         return f'Booking {self.id} on {self.pitch} from {self.start} to {self.end}'
 
+class PartyVehicle(models.Model):
+    vehiclereg = models.CharField(max_length=7)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="bookingvehicles")
+    checkedin = models.BooleanField(default=False)
+    noshow = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.vehiclereg} on Booking {self.booking.id}'
+
 class PartyMember(models.Model):
     firstname = models.CharField(max_length=255, blank=True, null=True)
     surname = models.CharField(max_length=255, blank=True, null=True)
-    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="bookingguests")
     checkedin = models.BooleanField(default=False)
     noshow = models.BooleanField(default=False)
 

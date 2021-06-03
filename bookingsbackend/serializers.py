@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Booking, Extra, Pitch, Guest, Rate, Vehicle, Payment, Comment
+from .models import *
 
 
 class PitchSerializer(serializers.ModelSerializer):
@@ -23,20 +23,26 @@ class CommentsSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['important', 'comment']
 
+class PartyMemberSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model = PartyMember
+        fields = ['firstname', 'surname', 'checkedin', 'noshow']
+
+class PartyVehicleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PartyVehicle
+        fields = ['vehiclereg']
+
 class BookingSerializer(serializers.ModelSerializer):
     guest = GuestSerializer(many=False, read_only=True)
     paymentsbybooking = PaymentSerializer(many=True, read_only=True)
     commentsbybooking = CommentsSerializer(many=True, read_only=True)
+    bookingparty = PartyMemberSerializer(many=True, read_only=True)
+    bookingvehicles = PartyVehicleSerializer(many=True, read_only=True)
 
     class Meta:
         model = Booking
-        fields = ['id', 'pitch', 'guest', 'start', 'end', 'adultno', 'childno', 'infantno', 'bookingrate', 'totalpayments', 'balance', 'paymentsbybooking', 'commentsbybooking', 'checkedin', 'locked'] 
-
-
-class VehicleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Vehicle
-        fields = ['id', 'vehiclereg', 'booking']
+        fields = ['id', 'pitch', 'guest', 'start', 'end', 'adultno', 'childno', 'infantno', 'bookingrate', 'totalpayments', 'balance', 'paymentsbybooking', 'commentsbybooking', 'checkedin', 'locked', 'bookingparty', 'bookingvehicles'] 
 
 class RateSerializer(serializers.ModelSerializer):
     class Meta:
