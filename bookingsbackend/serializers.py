@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Booking, Pitch, Guest, Rate, Vehicle, Payment, Comment
+from .models import Booking, Extra, Pitch, Guest, Rate, Vehicle, Payment, Comment
 
 
 class PitchSerializer(serializers.ModelSerializer):
@@ -42,3 +42,8 @@ class RateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rate
         fields = ['id', 'start', 'end', 'adult', 'child', 'infant']
+
+class ExtraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Extra
+        fields = ['name', 'rate', 'rateapplication', 'mandatorypublic', 'mandatoryall']

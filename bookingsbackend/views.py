@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 import numpy
 
 from .forms import BookingForm
-from .models import Booking, Pitch, Guest, Vehicle, Rate, Payment, PaymentChange
-from .serializers import BookingSerializer, GuestSerializer, PitchSerializer, RateSerializer, PaymentSerializer
+from .models import *
+from .serializers import BookingSerializer, GuestSerializer, PitchSerializer, RateSerializer, PaymentSerializer, ExtraSerializer
 
 ''' 
 
@@ -154,7 +154,6 @@ def dashboard(request):
         'editedpayments': editedpayments
     })
 
-
 @login_required
 def arrivals(request):
     allarrivals = Booking.objects.filter(start=date.today())
@@ -285,7 +284,7 @@ def apideletepayment(request, pk):
 
     return HttpResponse(status=200)
    
-
+@login_required
 def apiserverate(request):
     start = date.fromisoformat(request.GET['start'])
     end = date.fromisoformat(request.GET['end'])
@@ -300,7 +299,11 @@ def apiserverate(request):
     return HttpResponse(data, content_type='application/json')  
 
 
-
+@login_required
+def apiserveextras(request):
+    availableextras = Extra.objects.filter(site=request.user.site)
+    data = serializers.serialize("json", availableextras)
+    return HttpResponse(data, content_type='application/json')
 
 @csrf_exempt
 def apicreatenewbooking(request):
@@ -355,13 +358,24 @@ def apicreatenewbooking(request):
             value=bookingpaid,
             method=paymentmethod,
             booking=newbooking,
-            status="Created"
         )
         payment.save()
+
+        guestnumber = int(adultno) + int(childno) + int(infantno)
+        
+        for i in range(guestnumber):
+            partymember = PartyMember(
+                firstname="",
+                surname="",
+                booking=newbooking
+            )
+            partymember.save()
+
 
     data = BookingSerializer(newbooking)
     return HttpResponse(data, content_type='application/json')
 
+@login_required
 def apiserveavailablepitchlist(request):
     
     # obtains the iso format date from the GET params and converts to Date object
@@ -388,4 +402,24 @@ def apiserveavailablepitchlist(request):
     return HttpResponse(data, content_type='application/json')                                                      #return json obj
    
 ####################################
+
+def apicreatenewpayment(request): 
+    if request.method == "POST":
+        payload = json.loads(request.body)
+        bookingid = payload['bookingid']
+        date = payload['date']
+        value = payload['value']
+        method = payload['method']
+
+        payment = Payment(
+            creationdate=date,
+            value=value,
+            method=method,
+            booking=Booking.objects.get(pk=int(bookingid))
+        )
+        
+        payment.save()
+
+        data = PaymentSerializer(payment)
+        return HttpResponse(data, content_type='application/json')
 

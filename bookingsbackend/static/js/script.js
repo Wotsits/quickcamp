@@ -458,6 +458,7 @@ function closepane(elementname) {
 let availablepitches = ""
 
 function launchcreatenewbooking(element) {
+    
     let pitch = element.getAttribute("data-pitch")
     let start = element.getAttribute("data-date")
 
@@ -496,6 +497,13 @@ function launchcreatenewbooking(element) {
                 <input onchange=recalculate() type="text" id="childno" placeholder="Children">
                 <input onchange=recalculate() type="text" id="infantno" placeholder="Infants">
             </fieldset>
+
+            <p onclick=addextra()>Add extra</p>
+            <div id="extras">
+                <table id="extratable">
+                </table>
+            </div>
+            
             <h3>Fee: </h3>
             <p style="display: inline-block">£</p><p style="display: inline-block" id="rate">-</p>
             <label for="paid"> Paid: £</label>
@@ -744,7 +752,7 @@ function loadpaymentdetail(bookingid) {
 
         paymentdetails = document.createElement("div")
         paymentdetails.className = "paymentdetails"
-        paymentdetails.innerHTML = `<p class="closebutton" ><i class="far fa-times-circle" onclick=closepane(paymentdetailswrapper)></i></p><h2>Payment Details</h2>`
+        paymentdetails.innerHTML = `<p class="closebutton" ><i class="far fa-times-circle" onclick=closepane(paymentdetailswrapper)></i></p><h2>Payment Details</h2><i onclick=addpayment(${bookingid}) class="fas fa-plus-circle"></i>`
         
         paymentdetailstable = document.createElement("table")
         paymentdetailstable.className = "table table-striped"
@@ -805,6 +813,8 @@ function sortTable(table) {
 
     }
 }
+
+
 
 function checkin(button) {    
     pk = button.dataset.bookingid
@@ -929,3 +939,96 @@ function deletepayment(paymentid, bookingid) {
         }    
     })
 }
+
+function addpayment(bookingid) {
+    newpaymentline = document.createElement("tr")
+    newpaymentline.setAttribute("id", "newpaymentline")
+    newpaymentline.innerHTML = `
+        <td><input type="date" id="newpaymentdate"></input></td>
+        <td>New</td>
+        <td>£<input type="number" id="newpaymentvalue" step="0.01" placeholder="0.00"</td>
+        <td>
+            <select name="method" id="newpaymentmethod">
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="BACS">BACS</option>
+            </select>
+        </td>
+        <td><i onclick=savenewpayment(${bookingid}) class="fas fa-save"></i> Click here to save payment</td>
+        `
+    table = document.querySelector("tbody")
+    table.append(newpaymentline)
+    document.querySelector("#newpaymentdate").valueAsDate = new Date() 
+}
+
+function savenewpayment(bookingid) {
+    newpaymentdate = document.querySelector("#newpaymentdate").value
+    newpaymentvalue = document.querySelector("#newpaymentvalue").value
+    newpaymentmethod = document.querySelector("#newpaymentmethod").value
+    
+    payload = {
+        "bookingid": bookingid,
+        "date": newpaymentdate,
+        "value": newpaymentvalue,
+        "method": newpaymentmethod
+    }
+
+    fetch('createnewpayment', {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        response.json()
+        if (response.status !== 200) {
+            alert("payment registration unsuccessful")
+        }
+    })
+    .then(data => {
+        console.log(data)
+    })
+
+}
+
+function addextra(extras) {
+    fetch('serveextras', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        //when the button is pressed, add a row to the extras table.
+        extrarow = document.createElement('tr')
+        extrarow.setAttribute("id", "live")
+        extrasoptions = document.createElement("select")
+        for (i = 0; i < data.length; i++) {
+            option = document.createElement("option")
+            option.innerHTML = data[i].fields.name
+            option.value = data[i].fields.pk
+            extrasoptions.append(option)
+        }
+        // add a 'placeholder' into the select options inviting the user to select an extra from the list. 
+        option = document.createElement("option")
+        option.innerHTML = "Select an extra"
+        option.setAttribute("hidden", true)
+        option.setAttribute("selected", true)
+        extrasoptions.append(option)
+        
+        extrarow.innerHTML = `
+            <td class='extraname'></td>
+            <td class='extraquantity'>Quantity</td>
+            <td class='extracost'>Cost</td>
+            <td class='extracostbasis'>Cost Basis</td>
+            <td class='extratotal'>Total</td>
+        `
+        extratable = document.querySelector("#extratable")
+        extratable.append(extrarow)
+        livetr = document.querySelector("#live")
+        livetr.setAttribute("id", "")
+        livetr.querySelector('.extraname').append(extrasoptions)
+
+    })
+}
+

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.translation import TranslatorCommentWarning
-from .models import User, Booking, Pitch, Guest, Vehicle, Rate, Payment, Comment, Site, PaymentChange
+from .models import *
 
 # Register your models here.
 
@@ -14,3 +14,6 @@ admin.site.register(Payment)
 admin.site.register(Comment)
 admin.site.register(Site)
 admin.site.register(PaymentChange)
+admin.site.register(Extra)
+admin.site.register(PartyMember)
+

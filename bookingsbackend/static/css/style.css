@@ -152,9 +152,7 @@ body {
     text-align: center;
 }
 
-form * {
-    display: block;
-}
+
 
 form input {
     margin-bottom: 15px;
@@ -220,3 +218,22 @@ form input {
 .clickable {
     cursor: pointer;
 }
+
+/* Login Form styling starts here */
+
+#logincontainer form {
+    min-width: 300px;
+}
+
+#logincontainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#loginbuttoncontainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+

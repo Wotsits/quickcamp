@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.deletion import PROTECT
+from django.db.models.enums import Choices
 from django.db.models.fields import CharField
 from django.db.models.fields.related import ManyToManyField
 from datetime import date
@@ -38,7 +39,6 @@ class Guest(models.Model):
     def __str__(self):
         return f'Guest No {self.id} - {self.firstname} {self.surname}'
 
-
 class Vehicle(models.Model):
     vehiclereg = CharField(max_length=7)
 
@@ -64,6 +64,16 @@ class Booking(models.Model):
 
     def __str__(self):
         return f'Booking {self.id} on {self.pitch} from {self.start} to {self.end}'
+
+class PartyMember(models.Model):
+    firstname = models.CharField(max_length=255, blank=True, null=True)
+    surname = models.CharField(max_length=255, blank=True, null=True)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
+    checkedin = models.BooleanField(default=False)
+    noshow = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.firstname} {self.surname} on Booking {self.booking.id}'
 
 class Rate(models.Model):
     start = models.DateField()
@@ -102,3 +112,17 @@ class PaymentChange(models.Model):
 
     def __str__(self):
         return f'Payment {self.payment} was altered by user {self.user.username} on {self.datestamp}'
+
+class Extra(models.Model):
+    name = models.CharField(max_length=100)
+    rate = models.FloatField()
+    rateapplication = models.CharField(max_length=20, choices={
+        ('per night', 'per night'), 
+        ('per booking', 'per booking')
+    })
+    mandatorypublic = models.BooleanField()
+    mandatoryall = models.BooleanField()
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.name}'

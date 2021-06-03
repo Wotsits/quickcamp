@@ -24,7 +24,8 @@ urlpatterns = [
     path("viewbooking/<int:pk>", views.viewbooking, name="viewbooking"),
     path("amendpayment", views.apiamendpayment, name="amendpayment"),
     path("deletepayment/<int:pk>", views.apideletepayment, name="deletepayment"),
+    path("createnewpayment", views.apicreatenewpayment, name="createpayment"),
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
-
+    path("serveextras", views.apiserveextras, name="apiserveextras")
 ]
