@@ -1,6 +1,7 @@
 
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
+const body = document.querySelector("body")
 csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value
 const queryString = window.location.search
 const urlParams = new URLSearchParams(queryString)
@@ -33,7 +34,6 @@ let pitcharray = []
 const calendar = document.querySelector('#calendar')
 const calendarbody = document.createElement('div')
 calendarbody.className = "calendarbody"
-const body = document.querySelector("body")
 
 
 
@@ -399,17 +399,28 @@ function displaybookingpane(bookingid) {
             <p class="partydetail"><i class="fas fa-male"></i> - ${adults} |
             <i class="fas fa-child"></i> - ${children} |
             <i class="fas fa-baby"></i> - ${infants}</p>
+            <hr/>
             <div class="financesummary">
                 <fieldset>
                     <legend>Finance Summary</legend>
-                    <p>Total Cost: £${bookingrate}</p>
-                    <p>Total Payments: £${payments}</p>
-                    <p>Balance: £${balance}</p>
+                    <table class="table">
+                        <thead>
+                            <th>Cost</th>
+                            <th>Payments</th>
+                            <th>Balance</th>
+                        </thead>
+                        <tbody>
+                            <td>£${bookingrate}</td>
+                            <td>£${payments}</td>
+                            <td>£${balance}</td>
+                        </tbody>
+                    </table>
                 </fieldset>
             </div>
             <div class="controlbuttons">
                 <button class="btn btn-secondary" onclick="location.href='viewbooking/${bookingid}';"">View/Edit Full Booking</button>    
                 <button class="btn btn-secondary" onclick=loadpaymentdetail(${bookingid})>View Payments Detail</button>
+                <button class="btn btn-secondary" onclick=loadcomments(${bookingid})>View Comments</button>
             </div>
             `
 
@@ -770,6 +781,7 @@ function loadpaymentdetail(bookingid) {
             `
         
         paymentdetailstablebody = document.createElement("tbody")
+        paymentdetailstablebody.id = "paymenttablebody"
         for (i=0; i<data.length; i++) {
             payment = document.createElement("tr")
             payment.setAttribute("id", `payment-${data[i].id}`)
@@ -818,31 +830,104 @@ function sortTable(table) {
     }
 }
 
-function displaycheckinsummary(button) {
-    checkinsummarypanewrapper = document.createElement("div")
-    checkinsummarypanewrapper.setAttribute("id", "bookingpanewrapper")
-    body.append(checkinsummarypanewrapper)
-    checkinsummarypane = document.createElement("div")
+function displaycheckinpane(bookingid) {
+    fetch(`booking/${bookingid}`)
+    .then(response => response.json())
+    .then(data => {
+        
+        // setup the checkin pane
+        checkinpanewrapper = document.createElement("div")
+        checkinpanewrapper.setAttribute("id", "bookingpanewrapper")
+        body.append(checkinpanewrapper)
+        checkinpane = document.createElement("div")
+        checkinpane.id = "checkinpane"
+        
+        checkinpane.innerHTML = `
+            <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
+            <div id="vehiclesdiv"></div>
+            <div id="partydiv"></div>
+        `
+        checkinpanewrapper.append(checkinpane)
+
+        //populate the vehicles div
+        vehiclesdiv = document.querySelector("#vehiclesdiv")
+        for (i = 0; i < data.bookingvehicles.length; i++) {
+            vehiclebutton = document.createElement("button")
+            vehiclebutton.innerHTML = `${data.bookingvehicles[i].vehiclereg}`
+            vehiclebutton.type = "button"
+            vehiclebutton.setAttribute("onClick", "checkin(this)")
+            vehiclebutton.setAttribute("data-id", `${data.bookingvehicles[i].id}`)
+            vehiclebutton.setAttribute("data-type", "vehicle")
+            if (data.bookingvehicles[i].checkedin) {
+                vehiclebutton.className = "btn btn-success btn-lg"
+                vehiclebutton.setAttribute("data-instruction", "checkout")
+            }
+            else {
+                vehiclebutton.className = "btn btn-secondary btn-lg"
+                vehiclebutton.setAttribute("data-instruction", "checkin")
+            }
+            vehiclesdiv.append(vehiclebutton)
+        }
+
+        //populate the party member div.
+        partydiv = document.querySelector("#partydiv")
+        for (i = 0; i < data.bookingparty.length; i++) {
+            memberbutton = document.createElement("button")
+            memberbutton.innerHTML = `${data.bookingparty[i].firstname} ${data.bookingparty[i].surname}`
+            memberbutton.type = "button"
+            memberbutton.setAttribute("onClick", "checkin(this)")
+            memberbutton.setAttribute("data-id", `${data.bookingparty[i].id}`)
+            memberbutton.setAttribute("data-type", "member")
+            if (data.bookingparty[i].checkedin) {
+                memberbutton.className = "btn btn-success btn-lg"
+                memberbutton.setAttribute("data-instruction", "checkout")
+            }
+            else {
+                memberbutton.className = "btn btn-secondary btn-lg"
+                memberbutton.setAttribute("data-instruction", "checkin")
+            }
+            partydiv.append(memberbutton)
+        }
+        
+
+
+    })
+
+    
+
+
 }
 
 function checkin(button) {    
-    pk = button.dataset.bookingid
+    pk = button.dataset.id
     instruction = button.dataset.instruction
     
+    //this line ascertains whether it is a vehicle or a person that is being checked in by the function.  
+    type = button.dataset.type
+    
+    //this conditional sets the url to be used by the fetch request based on vehicle or person. 
+    if (type === "member") {
+        url = 'checkinguest'
+    }
+    else {
+        url = 'checkinvehicle'
+    }
+    
+    // ascertains whether it is a check-in or reverse and sets the instruction accordingly.
     if (instruction === "checkin") {
         instruction = true
-        //displays the booking pane for review as the guest is checked in. 
-        displaybookingpane(pk)
+
     } else {
         instruction = false
     }
 
+    //payload for the fetch request.
     payload = {
         "pk": pk,
         "checkedin": instruction
     }
     
-    fetch('checkinapi', {
+    fetch(url, {
         method: "PATCH",
         headers: {
             "X-CSRFToken": csrftoken,
@@ -851,37 +936,63 @@ function checkin(button) {
         body: JSON.stringify(payload)
     })
     .then(response => {
-        if (response.status === 200) {
-            response = response.json()
+        if (!response.status === 200) {
+            alert("Check-in/reverse action unsuccessful.  Please refresh page and try again")
+            return
         }
         else {
-            alert("Check-in unsuccessful.  Please try again")
+            return response.json()
         }
     })
     .then(data => {
-        tablerow = button.parentElement.parentElement
         if (instruction === true) {
-            arrivedtablebody = document.querySelector("#arrivedtable")
-            tablerow.style.animationPlayState = "running"
-            arrivedtablebody.appendChild(tablerow)
-            tablerow.className = ""
-            button.setAttribute("data-instruction", "reverse")
-            button.className = "btn btn-warning"
-            button.textContent = "Reverse Check-in"
-            sortTable(tablerow.parentElement) 
-            
-            
-        } else {
-            duetablebody = document.querySelector("#duetable")
-            tablerow.className = "disolve"
-            duetablebody.appendChild(tablerow)
-            tablerow.className = ""
-            button.setAttribute("data-instruction", "checkin")
-            button.className = "btn btn-success"
-            button.textContent = "Check-in"
-            sortTable(tablerow.parentElement) 
+            button.className = "btn btn-success btn-lg"
+            button.dataset.instruction = "reverse"
+        }
+        else {
+            button.className = "btn btn-secondary btn-lg"
+            button.dataset.instruction = "checkin"
         }
         
+        //in the background, the due/arrived tables are being reorganised.  
+        targetarrival = document.querySelector(`#arrival-${data[0].pk}`)
+        duetablebody = document.querySelector("#duetable")
+        arrivedtablebody = document.querySelector("#arrivedtable")
+            
+        //look at the checkin status of the booking to see if it is now completely checked in.
+        if (data[0].fields.checkedin) {
+            //if it is, we need to move the booking from due to arrived table.  
+            arrivedtablebody.append(targetarrival)                
+        }
+
+        else {
+            //else, put it in the due table if not already there
+            if (targetarrival.parentNode !== duetablebody) {
+                duetablebody.append(targetarrival)
+            }
+        }
+
+        //TODO
+        if (type === "member") {
+            if (instruction === true) {
+                document.querySelector(`#guest-${pk}`).className = "checkedin"
+            }
+            else {
+                document.querySelector(`#guest-${pk}`).className = ""
+            }
+        }
+        else {
+            if (instruction === true) {
+                document.querySelector(`#vehicle-${pk}`).className = "checkedin"
+            }
+            else {
+                document.querySelector(`#vehicle-${pk}`).className = ""
+            }
+        }
+
+        //and then sort.
+        sortTable(targetarrival.parentNode)
+            
     })
 }
 
@@ -965,7 +1076,7 @@ function addpayment(bookingid) {
         </td>
         <td><i onclick=savenewpayment(${bookingid}) class="fas fa-save"></i> Click here to save payment</td>
         `
-    table = document.querySelector("tbody")
+    table = document.querySelector("#paymenttablebody")
     table.append(newpaymentline)
     document.querySelector("#newpaymentdate").valueAsDate = new Date() 
 }

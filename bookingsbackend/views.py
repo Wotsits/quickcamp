@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.contrib.auth import logout, login, authenticate
+from django.contrib.auth import default_app_config, logout, login, authenticate
 from django.http import JsonResponse, HttpResponse
 from django.forms.models import model_to_dict
-from django.core import serializers
+from django.core import serializers as core_serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.templatetags.static import static
@@ -12,6 +12,7 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView,
 from rest_framework.response import Response
 from rest_framework import permissions
 from rest_framework import filters
+from rest_framework import serializers
 from django.utils import timezone
 from datetime import datetime, timedelta, date
 from dateutil import parser
@@ -19,9 +20,9 @@ import json
 import matplotlib.pyplot as plt
 import numpy
 
-from .forms import BookingForm
+from .forms import *
 from .models import *
-from .serializers import BookingSerializer, GuestSerializer, PitchSerializer, RateSerializer, PaymentSerializer, ExtraSerializer
+from .serializers import *
 
 ''' 
 
@@ -159,7 +160,8 @@ def arrivals(request):
     allarrivals = Booking.objects.filter(start=date.today())
     duearrivals = allarrivals.filter(checkedin=False).order_by("guest__surname")
     checkedinarrivals = allarrivals.filter(checkedin=True).order_by("guest__surname")
-    print(duearrivals)
+    for item in duearrivals:
+        print(item.bookingparty)
 
     return render(request, "bookingsbackend/arrivals.html", {
         "duearrivals": duearrivals,
@@ -212,16 +214,60 @@ class apiservepaymentlist(ListAPIView):
 class apiservedetail(RetrieveAPIView):
     pass
 
-class apicheckinbooking(UpdateAPIView):
-    queryset = Booking.objects.all()
-    serializer_class = BookingSerializer
+def updateBookingIfAllIn(booking):
+    '''
+    This function is called after a member of the party is checked in or out.  
+    If all members are checked in, the checked in status of the booking is updated
+    If all members are checked in and then one is checked out, 
+    the checked in status of the booking is reverted to false
+    '''
+
+    # Queryset called which presents any party members not checked in.  
+    guests = PartyMember.objects.filter(booking=booking, checkedin=False)
+
+    # If the length of the queryset is 0, this means that there are no uncheckedin party members.  
+    if len(guests) == 0:
+        # therefore the booking can be checked in.  
+        booking.checkedin = True
+        booking.save()
+    else:
+        # else, the booking is not complete and checkedin flag is false. 
+        booking.checkedin = False
+        booking.save()
+
+    return booking
+
+
+def checkinguest(request):
+    payload = json.loads(request.body)
+    pk = payload['pk']
+    checkedin = payload['checkedin']
+
+    guest = PartyMember.objects.get(pk=pk)
+    guest.checkedin = checkedin
+    guest.save()
+    booking = guest.booking
+    booking = updateBookingIfAllIn(booking)
+    print(booking)
+
+    data = core_serializers.serialize('json', [booking, ])                                                       #serialize availablepitches
+    return HttpResponse(data, status=200, content_type='application/json') 
     
-    def get_object(self):
-        payload = json.loads(self.request.body)
-        pk = payload['pk']
-        queryset = self.filter_queryset(self.get_queryset())
-        obj = queryset.get(pk=pk)
-        return obj
+def checkinvehicle(request):
+    payload = json.loads(request.body)
+    pk = payload['pk']
+    checkedin = payload['checkedin']
+
+    vehicle = PartyVehicle.objects.get(pk=pk)
+    vehicle.checkedin = checkedin
+    vehicle.save()
+    booking = vehicle.booking
+    booking = updateBookingIfAllIn(booking)
+    
+    data = core_serializers.serialize('json', [booking, ])                                                       #serialize availablepitches
+    return HttpResponse(data, status=200, content_type='application/json')
+    
+
 
 def apiamendpayment(request):
     payload = json.loads(request.body)
@@ -296,14 +342,14 @@ def apiserverate(request):
     queryset3 = Rate.objects.filter(start__range=["2001-01-01", start], end__range=[end, "2100-12-31"])
     rates = queryset1 | queryset2 | queryset3
 
-    data = serializers.serialize("json", rates)                                                          #serialize availablepitches
+    data = core_serializers.serialize("json", rates)                                                          #serialize availablepitches
     return HttpResponse(data, content_type='application/json')  
 
 
 @login_required
 def apiserveextras(request):
     availableextras = Extra.objects.filter(site=request.user.site)
-    data = serializers.serialize("json", availableextras)
+    data = core_serializers.serialize("json", availableextras)
     return HttpResponse(data, content_type='application/json')
 
 @login_required
@@ -401,7 +447,7 @@ def apiserveavailablepitchlist(request):
         if pitch not in unavailablepitches:
             availablepitches |= Pitch.objects.filter(pk=pitch.pk)
     
-    data = serializers.serialize("json", availablepitches)                                                          #serialize availablepitches
+    data = core_serializers.serialize("json", availablepitches)                                                          #serialize availablepitches
     return HttpResponse(data, content_type='application/json')                                                      #return json obj
    
 ####################################

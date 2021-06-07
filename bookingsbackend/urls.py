@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.urls import path
 from . import views
 from rest_framework import filters
-from .models import Booking, Pitch, Guest, Payment
-from .serializers import BookingSerializer, PitchSerializer, GuestSerializer, PaymentSerializer
+from .models import *
+from .serializers import *
 
 
 urlpatterns = [
@@ -20,12 +20,14 @@ urlpatterns = [
     path("createnewguest", views.apicreate.as_view(queryset=Guest.objects.all(), serializer_class=GuestSerializer), name="apicreateview"),
     path("dashboard", views.dashboard, name="dashboard"),
     path("arrivals", views.arrivals, name="arrivals"),
-    path("checkinapi", views.apicheckinbooking.as_view(), name="apicheckinbooking"),
+    path("checkinguest", views.checkinguest, name="apicheckinbooking"),
+    path("checkinvehicle", views.checkinvehicle, name="apicheckinbooking"),
     path("viewbooking/<int:pk>", views.viewbooking, name="viewbooking"),
     path("amendpayment", views.apiamendpayment, name="amendpayment"),
     path("deletepayment/<int:pk>", views.apideletepayment, name="deletepayment"),
     path("createnewpayment", views.apicreatenewpayment, name="createpayment"),
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
-    path("serveextras", views.apiserveextras, name="apiserveextras")
+    path("serveextras", views.apiserveextras, name="apiserveextras"),
+
 ]

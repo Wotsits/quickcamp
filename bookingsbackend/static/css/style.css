@@ -17,7 +17,7 @@ body {
 #primarynav {
     width: 100%;
     display: flex;
-    justify-content: space-evenly;
+    justify-content: space-between;
     align-items: center;
     margin-bottom:40px
 }
@@ -25,7 +25,7 @@ body {
 #primarynavitems {
     width: 100%;
     display: flex;
-    justify-content: space-evenly;
+    justify-content: space-between;
     align-items: center;
     list-style-type: none;
     margin-block-start: 0px;
@@ -33,7 +33,7 @@ body {
     margin-inline-start: 0px;
     margin-inline-end: 0px;
     padding-inline-start: 0px;
-    padding: 0px 40px;
+    padding: 0px 20px;
 }
 
 .navitem a {
@@ -50,6 +50,12 @@ body {
 
 #navlogo {
     width: 150px
+}
+
+#profilepic {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
 }
 
 /* Calendar Styling Starts Here */
@@ -132,7 +138,7 @@ body {
     background-color:rgba(33, 35, 51, 0.5);
 }
 
-#bookingpane {
+#bookingpane, #checkinpane {
     position: relative;
     max-height: 90vh;
     width: 80%;
@@ -221,6 +227,25 @@ form input {
 
 .checkedin {
     color: green
+}
+
+#vehiclesdiv {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+#partydiv {
+    display: flex;
+    flex-direction: column;
+}
+
+#checkinpane div {
+    margin: 20px;
+}
+
+#checkinpane button {
+    margin: 10px
 }
 
 /* Login Form styling starts here */

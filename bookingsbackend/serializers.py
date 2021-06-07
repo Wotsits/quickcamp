@@ -26,12 +26,12 @@ class CommentsSerializer(serializers.ModelSerializer):
 class PartyMemberSerializer(serializers.ModelSerializer):
     class Meta: 
         model = PartyMember
-        fields = ['firstname', 'surname', 'checkedin', 'noshow']
+        fields = ['id', 'firstname', 'surname', 'checkedin', 'noshow']
 
 class PartyVehicleSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartyVehicle
-        fields = ['vehiclereg']
+        fields = ['id', 'vehiclereg', 'checkedin']
 
 class BookingSerializer(serializers.ModelSerializer):
     guest = GuestSerializer(many=False, read_only=True)

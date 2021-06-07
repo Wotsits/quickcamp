@@ -10,35 +10,45 @@
             <thead>
                 <th>Surname</th>
                 <th>Departure</th>
-                <th>Party Details</th>
+                <th>Pitch</th>
+                <th>Party Members</th>
                 <th>Vehicle Reg</th>
             </thead>
             <tbody id="duetable">
                 {% for arrival in duearrivals %}
-                    <tr class="disolvable" style="animation-play-state: paused;">
-                            {% if not arrival.balance == 0 %}
-                                <td onclick=displaybookingpane({{arrival.id}}) class="overdue clickable">{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
-                            {% else %}
-                                <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.guest.surname}}</td>
-                            {% endif %}
-                            
-                            <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.end}}</td>
-                            <td onclick=displaybookingpane({{arrival.id}}) class="clickable"><p class="partydetail"><i class="fas fa-male"></i> - {{arrival.adultno}}</p>
-                                <p class="partydetail"><i class="fas fa-child"></i> - {{arrival.childno}}</p>
-                                <p class="partydetail"><i class="fas fa-baby"></i> - {{arrival.infantno}}</p></td>
-                            <td onclick=displaybookingpane({{arrival.id}}) class="clickable">
-                                {% for vehicle in arrival.bookingvehicles.all %} 
-                                    {% if vehicle.checkedin %}
-                                        <p class="checkedin">{{vehicle.vehiclereg}}</p>
-                                    {% else %}
-                                        <p>{{vehicle.vehiclereg}}</p>
-                                    {% endif %}
-
-                                {%endfor%}
-                            </td>
+                    {% if not arrival.balance == 0 %}
+                        <tr id="arrival-{{arrival.id}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable overdue disolvable">
+                    {% else %}
+                        <tr id="arrival-{{arrival.id}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable">
+                    {% endif %}
                         
-                    </tr>
-                {%endfor%}
+                            <td>{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
+                            <td>{{arrival.end}}</td>
+                            <td>{{arrival.pitch.name}}</td>
+                            <td>
+                                {% for member in arrival.bookingparty.all %}
+                                    
+                                        {% if member.checkedin %}    
+                                            <p id="guest-{{member.id}}" class="checkedin">{{member.firstname}} {{member.surname}}</p>
+                                        {% else %}
+                                            <p id="guest-{{member.id}}">{{member.firstname}} {{member.surname}}</p>
+                                        {% endif %}
+                                    
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% for vehicle in arrival.bookingvehicles.all %} 
+                                    {% if not vehicle.noshow %}
+                                        {% if vehicle.checkedin %}
+                                            <p id="vehicle-{{vehicle.id}}" class="checkedin">{{vehicle.vehiclereg}}</p>
+                                        {% else %}
+                                            <p id="vehicle-{{vehicle.id}}">{{vehicle.vehiclereg}}</p>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                {% endfor %}
             </tbody>
         </table>
             
@@ -47,18 +57,38 @@
             <thead>
                 <th>Surname</th>
                 <th>Departure</th>
-                <th>Party Details</th>
+                <th>Pitch</th>
+                <th>Party Members</th>
                 <th>Vehicle Reg</th>
             </thead>
             <tbody id="arrivedtable">
                 {% for arrival in checkedinarrivals %}
-                    <tr class="disolvable" style="animation-play-state: paused;">
-                        <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.guest.surname}}</td>
-                        <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.end}}</td>
-                        <td onclick=displaybookingpane({{arrival.id}}) class="clickable"><p class="partydetail"><i class="fas fa-male"></i> - {{arrival.adultno}}</p>
-                            <p class="partydetail"><i class="fas fa-child"></i> - {{arrival.childno}}</p>
-                            <p class="partydetail"><i class="fas fa-baby"></i> - {{arrival.infantno}}</p></td>
-                        <td onclick=displaybookingpane({{arrival.id}}) class="clickable">{{arrival.vehiclereg}}</td>
+                    <tr id="arrival-{{arrival.id}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable">
+                        <td>{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
+                        <td>{{arrival.end}}</td>
+                        <td>{{arrival.pitch.name}}</td>
+                        <td>
+                            {% for member in arrival.bookingparty.all %}
+                                
+                                    {% if member.checkedin %}    
+                                        <p id="guest-{{member.id}}" class="checkedin">{{member.firstname}} {{member.surname}}</p>
+                                    {% else %}
+                                        <p id="guest-{{member.id}}">{{member.firstname}} {{member.surname}}</p>
+                                    {% endif %}
+                                
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for vehicle in arrival.bookingvehicles.all %} 
+                                {% if not vehicle.noshow %}
+                                    {% if vehicle.checkedin %}
+                                        <p id="vehicle-{{vehicle.id}}" class="checkedin">{{vehicle.vehiclereg}}</p>
+                                    {% else %}
+                                        <p id="vehicle-{{vehicle.id}}">{{vehicle.vehiclereg}}</p>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
                     </tr>
                 {%endfor%}
             </tbody>

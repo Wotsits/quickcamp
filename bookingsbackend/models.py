@@ -19,6 +19,7 @@ class Site(models.Model):
 
 class User(AbstractUser):
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    profilepic = models.URLField()
 
 class PitchType(models.Model):
     name = models.CharField(max_length=90)
@@ -74,7 +75,7 @@ class PartyVehicle(models.Model):
 class PartyMember(models.Model):
     firstname = models.CharField(max_length=255, blank=True, null=True)
     surname = models.CharField(max_length=255, blank=True, null=True)
-    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="bookingguests")
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="bookingparty")
     checkedin = models.BooleanField(default=False)
     noshow = models.BooleanField(default=False)
 
