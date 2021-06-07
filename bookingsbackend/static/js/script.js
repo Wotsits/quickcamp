@@ -113,7 +113,7 @@ function setupcalendarbody() {
     for (let i = 0; i < pitcharray.length; i++) {
         let pitch = document.createElement('div')
         pitch.className = "calendarrow"
-        pitch.setAttribute('id', `${pitcharray[i]}`)
+        pitch.setAttribute('id', `pitchrow-${pitcharray[i]}`)
 
         for (let j = 0; j < datearray.length; j++) {
             let day = document.createElement('div')
@@ -152,16 +152,15 @@ function fetchbookings() {
             let bookingstart = Date.parse(data[i].start)
             let bookingend = Date.parse(data[i].end)
             let bookingpitch = data[i].pitch.toString()
-            let calendarcomponentarray = document.querySelectorAll(".calendaritem")
+            let targetcalendarrow = document.querySelector(`#pitchrow-${bookingpitch}`)
+            let calendarcomponentarray = targetcalendarrow.querySelectorAll(".calendaritem")
             let balance = data[i].balance
             let checkedin = data[i].checkedin
             let locked = data[i].locked
-            console.log(locked)
 
             calendarcomponentarray.forEach(function(element) {
                 let elementdate = element.getAttribute("data-date")
-                let pitch = element.getAttribute("data-pitch")
-                if (parseInt(elementdate) >= bookingstart && parseInt(elementdate) < bookingend && pitch === bookingpitch) {
+                if (parseInt(elementdate) >= bookingstart && parseInt(elementdate) < bookingend) {
                     if (balance !== 0.00) {
                         element.style.backgroundColor = "red"
                     }
