@@ -4,14 +4,11 @@
 
 body {
     box-sizing: border-box;
-    background-color: rgb(241,241,241);
+    background-color: rgb(255,255,255);
     color: darkslategray;
     font-family: 'Montserrat';
 }
 
-#contentwrapper {
-    padding: 20px;
-}
 
 
 #primarynav {
@@ -19,6 +16,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 20px;
     margin-bottom:40px
 }
 
@@ -49,7 +47,7 @@ body {
 }
 
 #navlogo {
-    width: 150px
+    width: 200px
 }
 
 #profilepic {
@@ -67,12 +65,17 @@ body {
     align-items: center;
 }
 
+#datepickerbuttons {
+    flex-direction: row;
+}
+
 #datepicker input {
     max-width: 200px
 }
 
 #calendar {
     display: flex;
+    margin: 20px;
     max-width: 100vw;
     border: solid 1px rgba(33, 35, 51, 1);
     margin-top: 20px
@@ -167,6 +170,9 @@ form input {
 #searchresultsdiv {
     height: 100px;
     overflow-y: scroll;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    padding: 16px 12px;
 }
 
 .paymentdetails {
@@ -175,6 +181,28 @@ form input {
     background-color: lightgray;
     border: solid 1px darkslategray;
     border-radius: 5px;
+}
+
+#controlpanel {
+    width: 100vw;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content:space-between;
+    align-items: center;
+    background-color: darkslategray;
+    padding: 20px; 
+    border-top: 2px solid white;
+
+}
+
+.hidden {
+    position: fixed;
+
+}
+
+.visible {
+    position: fixed;
+    bottom: 0px
 }
 
 /* Dashboard Styling Starts Here */

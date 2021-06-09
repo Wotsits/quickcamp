@@ -13,7 +13,6 @@ if (urlParams.get("startdate")) {
 
 document.querySelector('#startdate').value = today.toISOString().slice(0, 10)
 
-
 // initialises date array using today as reference
 let correcteddate = new Date(today)
 correcteddate.setUTCHours(0, 0, 0, 0)
@@ -34,7 +33,6 @@ let pitcharray = []
 const calendar = document.querySelector('#calendar')
 const calendarbody = document.createElement('div')
 calendarbody.className = "calendarbody"
-
 
 
 
@@ -152,7 +150,9 @@ function fetchbookings() {
             let bookingstart = Date.parse(data[i].start)
             let bookingend = Date.parse(data[i].end)
             let bookingpitch = data[i].pitch.toString()
+            // search the calendar for the pitch row div 
             let targetcalendarrow = document.querySelector(`#pitchrow-${bookingpitch}`)
+            // get the calendar elements from that pitch row.
             let calendarcomponentarray = targetcalendarrow.querySelectorAll(".calendaritem")
             let balance = data[i].balance
             let checkedin = data[i].checkedin
@@ -465,13 +465,18 @@ function closepane(elementname) {
 
 ///////////////////////// NEW BOOKING CREATION
 
+// variable to hold array of available pitches
 let availablepitches = ""
+// instantiate variable to hold preferred pitch which controls the create booking pane default pitch option
+let preferredpitch = 0
 
 function launchcreatenewbooking(element) {
     
-    let pitch = element.getAttribute("data-pitch")
+    preferredpitch = element.getAttribute("data-pitch")
     let start = element.getAttribute("data-date")
-
+    start = new Date(parseInt(start))
+    start = start.toISOString().substring(0, 10)
+    
     let bookingpanewrapper = document.createElement('div')
     bookingpanewrapper.setAttribute('id', 'bookingpanewrapper')
     let bookingpane = document.createElement('div')
@@ -480,50 +485,62 @@ function launchcreatenewbooking(element) {
     bookingpane.innerHTML = `
         <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
         <h3>New Booking</h3>
+        <hr>
         <form autocomplete="off">
-            
-            <div id='guestsearch'>
-                <label for="searchparam">Email Address:</label>
-                <input type="text" id="searchparam" onkeyup=guestsearch(this) autocomplete="off">
+            <div class="form-group">
+                <div id='guestsearch' class="form-floating mb-3">
+                    <input type="text" id="searchparam" class="form-control" onkeyup=guestsearch(this) autocomplete="off" placeholder="Email Address">
+                    <label for="searchparam">Email Address</label>
+                </div>
+                <div id="guestselect">
+                    <fieldset>
+                        <legend>Existing Guests</legend>
+                        <div id="searchresultsdiv"></div>
+                    </fieldset>
+                </div>
             </div>
-            <div id="guestselect">
+            <hr>
+            
+            <div class="form-group">
+                <label for="arrival">Arrival Date: </label>
+                <input type="date" class="form-control" id="arrival" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Arrival Date" value="${start}">
+                <label for="departure">Departure Date: </label>
+                <input type="date" class="form-control" id="departure" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Departure Date">
+                <label for="arrival">Pitch: </label>
+                <select name="pitch" class="form-control" id="pitchselect">
+                    <!-- options populate here -->
+                </select>
+            </div>
+            <hr>
+            <div class="form-group">
                 <fieldset>
-                    <legend>Existing Guests</legend>
-                    <div id="searchresultsdiv"></div>
+                    <legend>Party Details</legend>
+                    <input onchange=recalculate() class="form-control" type="text" id="adultno" placeholder="Adults">
+                    <input onchange=recalculate() class="form-control" type="text" id="childno" placeholder="Children">
+                    <input onchange=recalculate() class="form-control" type="text" id="infantno" placeholder="Infants">
                 </fieldset>
-            </div>
-            
-            <label for="arrival">Arrival Date: </label>
-            <input type="date" id="arrival" onchange=recalculate() onblur=resetavailablepitches(${pitch}) placeholder="Arrival Date">
-            <label for="arrival">Departure Date: </label>
-            <input type="date" id="departure" onchange=recalculate() onblur=resetavailablepitches(${pitch}) placeholder="Departure Date">
-            <label for="arrival">Pitch: </label>
-            <select name="pitch" id="pitchselect">
-                <!-- options populate here -->
-            </select>
-            <fieldset>
-                <legend>Party Details</legend>
-                <input onchange=recalculate() type="text" id="adultno" placeholder="Adults">
-                <input onchange=recalculate() type="text" id="childno" placeholder="Children">
-                <input onchange=recalculate() type="text" id="infantno" placeholder="Infants">
-            </fieldset>
 
-            <p onclick=addextra()>Add extra</p>
-            <div id="extras">
-                <table id="extratable">
-                </table>
+                <p onclick=addextra()>Add extra</p>
+                <div id="extras">
+                    <table id="extratable">
+                    </table>
+                </div>
             </div>
             
-            <h3>Fee: </h3>
-            <p style="display: inline-block">£</p><p style="display: inline-block" id="rate">-</p>
-            <label for="paid"> Paid: £</label>
-            <input type=number step="0.01" min=0 id="paid" placeholder="0">
-            <label for="paymentmethod"> Payment Method: </label>
-            <select name="paymentmethod" id="paymentmethod">
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="BACS">BACS</option>
-            </select>
+            <hr>
+
+            <div class="form-group">
+                <h3>Fee: </h3>
+                <p style="display: inline-block">£</p><p style="display: inline-block" id="rate">-</p>
+                <label for="paid"> Paid: £</label>
+                <input type=number class="form-control" step="0.01" min=0 id="paid" placeholder="0">
+                <label for="paymentmethod"> Payment Method: </label>
+                <select name="paymentmethod" class="form-control" id="paymentmethod">
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="BACS">BACS</option>
+                </select>
+            </div>
             <button onclick=createnewbooking()>Submit</button>
         </form>`
     
@@ -627,7 +644,7 @@ function createguest() {
     })
 }
 
-function resetavailablepitches(pitch) {
+function resetavailablepitches(preferredpitch) {
     availablepitches = ""
     start = document.querySelector('#arrival').value
     end = document.querySelector('#departure').value
@@ -638,7 +655,9 @@ function resetavailablepitches(pitch) {
             availablepitches += `<option value=${data[i].pk}>${data[i].fields.name}</option>`
         }
         document.querySelector('#pitchselect').innerHTML = availablepitches
-        
+        if (availablepitches.includes(preferredpitch)) {
+            document.querySelector('#pitchselect').value = preferredpitch
+        }
     })
 }
 
