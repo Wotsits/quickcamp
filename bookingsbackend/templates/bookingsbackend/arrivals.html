@@ -19,9 +19,9 @@
             <tbody id="duetable">
                 {% for arrival in duearrivals %}
                     {% if not arrival.balance == 0 %}
-                        <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable overdue disolvable">
+                        <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable overdue disolvable arrival">
                     {% else %}
-                        <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable">
+                        <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable arrival">
                     {% endif %}
                         
                             <td>{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
@@ -65,7 +65,7 @@
             </thead>
             <tbody id="arrivedtable">
                 {% for arrival in checkedinarrivals %}
-                    <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable">
+                    <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable arrival">
                         <td>{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
                         <td>{{arrival.end}}</td>
                         <td>{{arrival.pitch.name}}</td>
