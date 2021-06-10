@@ -29,5 +29,6 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
     path("serveextras", views.apiserveextras, name="apiserveextras"),
+    path("amendbooking/<int:pk>", views.apiamendbooking, name="amendbooking")
 
 ]

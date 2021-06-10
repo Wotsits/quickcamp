@@ -3,19 +3,15 @@
 
 {% block content %}
     <form id="datepicker">
-        <input type="date" id="startdate" class="form-control" name="startdate"></input>
-        <div id="datepickerbuttons">
-            <input type="submit" class="btn btn-dark" value="Reposition"></input>
-            <input type="submit" class="btn btn-dark" value="Today"></input>
-        </div>
+        <input type="date" onChange=repositioncalendar() id="startdate" class="form-control" name="startdate"></input>
     </form>
 
     <div id="calendar"></div>
 
     <div id="controlpanel" class="visible">
-        <button type="button" onclick=displaybooking() id="displaybutton" class="btn btn-light">Display</button>
-        <button type="button" onclick=movebooking() id="movebutton" class="btn btn-light">Move</button>
-        <button type="button" onclick=editbooking() id="fulleditbutton" class="btn btn-light">Full Edit</button>
+        <button type="button" id="displaybutton" class="btn btn-light" disabled>Display</button>
+        <button type="button" id="movebutton" class="btn btn-light" disabled>Move</button>
+        <button type="button" id="fulleditbutton" class="btn btn-light" disabled>Full Edit</button>
     </div>
 
     <script src="{% static '/js/calendar.js' %}"></script>

@@ -9,7 +9,9 @@ body {
     font-family: 'Montserrat';
 }
 
-
+h3 {
+    margin-bottom: 30px
+}
 
 #primarynav {
     width: 100%;
@@ -60,9 +62,9 @@ body {
 
 #datepicker {
     display: flex;
-    flex-direction:column;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
+    padding-right: 20px;
 }
 
 #datepickerbuttons {
@@ -152,6 +154,19 @@ body {
     overflow-y: scroll;
 }
 
+.basicbookinginfo {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.panepartydetail {
+    font-size: 200%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
 .closebutton {
     cursor: pointer;
     position: absolute;
@@ -205,6 +220,10 @@ form input {
     bottom: 0px
 }
 
+.message {
+    color: black;
+}
+
 /* Dashboard Styling Starts Here */
 
 #dashboardwrapper {
@@ -212,6 +231,7 @@ form input {
     flex-wrap: wrap;
     justify-content: center;
     align-items: stretch;
+    padding: 20px;
     
 }
 
@@ -240,6 +260,18 @@ form input {
 }
 
 /* Arrivals List Styling Starts Here */
+
+#arrivalswrapper {
+    padding: 20px
+}
+
+#arrivalssearch {
+    margin-bottom: 20px
+}
+
+#duetablefull {
+    margin-bottom:100px;
+}
 
 .partydetail {
     margin: 0px

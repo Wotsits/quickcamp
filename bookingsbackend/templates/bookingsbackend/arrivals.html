@@ -1,12 +1,14 @@
 {% extends 'bookingsbackend/template.html' %}
+{% load static %}
 
 
 {% block content %}
 
     
     <div class="wrapper" id="arrivalswrapper">
+        <input type="text" class="form-control" id="arrivalssearch" onkeyup=arrivalsfilter() autofocus placeholder="Arrivals filter"></input>
         <h4>Due Arrivals</h4>
-        <table class="table table-striped">
+        <table id="duetablefull" class="table table-striped">
             <thead>
                 <th>Surname</th>
                 <th>Departure</th>
@@ -17,9 +19,9 @@
             <tbody id="duetable">
                 {% for arrival in duearrivals %}
                     {% if not arrival.balance == 0 %}
-                        <tr id="arrival-{{arrival.id}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable overdue disolvable">
+                        <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable overdue disolvable">
                     {% else %}
-                        <tr id="arrival-{{arrival.id}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable">
+                        <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable">
                     {% endif %}
                         
                             <td>{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
@@ -63,7 +65,7 @@
             </thead>
             <tbody id="arrivedtable">
                 {% for arrival in checkedinarrivals %}
-                    <tr id="arrival-{{arrival.id}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable">
+                    <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable">
                         <td>{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
                         <td>{{arrival.end}}</td>
                         <td>{{arrival.pitch.name}}</td>
@@ -94,4 +96,5 @@
             </tbody>
         </table>
     </div>
+    <script src="{% static '/js/arrivals.js' %}"></script>
 {% endblock %}

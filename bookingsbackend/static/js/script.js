@@ -13,6 +13,8 @@ if (urlParams.get("startdate")) {
 
 document.querySelector('#startdate').value = today.toISOString().slice(0, 10)
 
+
+
 // initialises date array using today as reference
 let correcteddate = new Date(today)
 correcteddate.setUTCHours(0, 0, 0, 0)
@@ -112,6 +114,7 @@ function setupcalendarbody() {
         let pitch = document.createElement('div')
         pitch.className = "calendarrow"
         pitch.setAttribute('id', `pitchrow-${pitcharray[i]}`)
+        pitch.dataset.pitch = pitcharray[i]
 
         for (let j = 0; j < datearray.length; j++) {
             let day = document.createElement('div')
@@ -170,9 +173,13 @@ function fetchbookings() {
                     else {
                         element.style.backgroundColor = "rgb(42, 147, 130)"
                     }
+
                     element.setAttribute("data-bookingid", bookingid)
+
+                    element.setAttribute("data-originalcolor", element.style.backgroundColor)
                                         
-                    element.setAttribute("onclick", `displaybookingpane(${data[i].id})`)
+                    element.setAttribute("onclick", `selectbooking(${data[i].id})`)
+
                     if (parseInt(elementdate) == bookingstart) {
                         if (locked) {
                             element.innerHTML = `<p><i class="fas fa-lock"></i> ${data[i].guest.surname}</p>`
@@ -203,7 +210,113 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 
+////////////////////////// SELECT BOOKING FUNCTIONALITY
+let selectedbooking = ""
+let selectstate = false
+const displaybutton = document.querySelector("#displaybutton")
+const movebutton = document.querySelector("#movebutton")
+const fulleditbutton = document.querySelector("#fulleditbutton")
+const controlpanel = document.querySelector("#controlpanel")
 
+function selectbooking(bookingid) {
+    
+    // grabs each pitch-day from calendar
+    bookingblocksoncalendar = document.querySelectorAll(".calendaritem")
+
+    // conditional first checks if a different booking is already selected
+    if ((!(selectedbooking === bookingid)) && selectstate === true) {
+                
+        // checks each pitch-day to see if they are the selected booking and if so resets them
+        bookingblocksoncalendar.forEach((element) => {
+            if (element.dataset.bookingid === selectedbooking.toString()) {
+                element.removeAttribute('data-state')
+                element.style.backgroundColor = element.dataset.originalcolor
+            }
+        })
+        
+        // resets the controlpanel buttons (poss not necessary)
+        displaybutton.removeAttribute("onclick")
+        displaybutton.setAttribute("disabled", true)
+        movebutton.removeAttribute("onclick")
+        movebutton.setAttribute("disabled", true)
+        fulleditbutton.removeAttribute("onclick")
+        fulleditbutton.setAttribute("disabled", true)
+
+        // resets the selectstate to false
+        selectstate = false
+    }
+
+    // sets the value of the selected booking var to match the clicked booking
+    selectedbooking = bookingid
+   
+    // checks each pitch-day to see if they are the selected booking and if update their state & colour
+    bookingblocksoncalendar.forEach((element) => {
+        if (element.dataset.bookingid === selectedbooking.toString()) {
+            if (element.dataset.state === "selected") {
+                element.removeAttribute('data-state')
+                element.style.backgroundColor = element.dataset.originalcolor
+                selectstate = false
+            }
+            else {
+                element.style.backgroundColor = "yellow"
+                element.dataset.state = "selected"
+                selectstate = true
+            }
+        }
+    })
+
+    // edit button components dependant on state.
+    if (selectstate) {
+        displaybutton.setAttribute("onclick", `displaybookingpane(${bookingid})`)
+        displaybutton.removeAttribute("disabled")
+        movebutton.setAttribute("onclick", `movebooking(${bookingid})`)
+        movebutton.removeAttribute("disabled")
+        fulleditbutton.setAttribute("onclick", `editbookingpane(${bookingid})`)
+        fulleditbutton.removeAttribute("disabled")
+    } 
+    else {
+        displaybutton.removeAttribute("onclick")
+        displaybutton.setAttribute("disabled", true)
+        movebutton.removeAttribute("onclick")
+        movebutton.setAttribute("disabled", true)
+        fulleditbutton.removeAttribute("onclick")
+        fulleditbutton.setAttribute("disabled", true)
+    }
+}
+
+////////////////////////// MOVE BOOKING FUNCTIONALITY
+
+function movebooking(bookingid) {
+    message = document.createElement("div")
+    message.innerHTML = '<p class="message">Booking move in progress.  Select new start location</p>'
+    controlpanel.append(message)
+    bookingblocksoncalendar = document.querySelectorAll(".calendaritem")
+    bookingblocksoncalendar.forEach((element) => {
+        // commit the existing onclick attribute to a dataset entry
+        element.dataset.onclickattribute = element.getAttribute("onclick")
+        // remove the existing onclick attribute
+        element.removeAttribute("onclick")
+        // add a new onclick event listener
+        element.addEventListener("click", () => {
+            payload = {
+                newstart: element.dataset.date,
+                newpitch: element.dataset.pitch
+            }
+            fetch(`amendbooking/${bookingid}`, {
+                method: "PATCH",
+                headers: {
+                    "X-CSRFToken": csrftoken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+            })
+        })
+    })
+}
 
 ////////////////////////// LOAD BACKWARD DATES
 
@@ -214,7 +327,6 @@ function loadbackward() {
     for (i=-7; i<0; i++) {
         forwardDates.push(new Date(Date.parse(firstDateRendered)+(i*millisecondsinaday)))
     }
-    console.log(forwardDates)
     
     //grab the calendar header
     let calendarheader = document.querySelector('#maincalendarheader')
@@ -230,7 +342,7 @@ function loadbackward() {
     
     calendarrows.forEach(function(element) {
         //extract pitch ID from row
-        const pitchid = element.getAttribute('id')
+        const pitchid = element.dataset.pitch
         
         //render the additions to each calendar row
         //if header row...
@@ -290,7 +402,7 @@ function loadforward() {
     let calendarrows = document.querySelectorAll('.calendarrow')
     calendarrows.forEach(function(element) {
         //extract pitch ID from row
-        pitchid = element.getAttribute('id')
+        pitchid = element.dataset.pitch
         
         //render the additions to each calendar row
         //if header row...
@@ -391,13 +503,18 @@ function displaybookingpane(bookingid) {
             <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
             <h3>Booking ${bookingid}</h3>
             <div id="importantbookingcomments"></div>
-            <strong>Pitch: </strong><p>${pitch}</p>
-            <strong>Guest Name: </strong><p>${guestname}</p>
-            <strong>Arriving: </strong><p>${arrival}</p>
-            <strong>Departing: </strong><p>${departure}</p>
-            <p class="partydetail"><i class="fas fa-male"></i> - ${adults} |
-            <i class="fas fa-child"></i> - ${children} |
-            <i class="fas fa-baby"></i> - ${infants}</p>
+            <div class="basicbookinginfo"> 
+                <div><p><strong>Pitch: </strong></p><p> ${pitch}</p></div>
+                <div><p><strong>Guest Name: </strong></p><p> ${guestname}</p></div>
+                <div><p><strong>Arriving: </strong></p><p> ${arrival}</p></div>
+                <div><p><strong>Departing: </strong></p><p> ${departure}</p></div>
+            </div>
+            <hr>
+            <div class="panepartydetail">
+                <p class="partydetail"><i class="fas fa-male"></i> - ${adults} |
+                <i class="fas fa-child"></i> - ${children} |
+                <i class="fas fa-baby"></i> - ${infants}</p>
+            </div>
             <hr/>
             <div class="financesummary">
                 <fieldset>
@@ -489,7 +606,7 @@ function launchcreatenewbooking(element) {
         <form autocomplete="off">
             <div class="form-group">
                 <div id='guestsearch' class="form-floating mb-3">
-                    <input type="text" id="searchparam" class="form-control" onkeyup=guestsearch(this) autocomplete="off" placeholder="Email Address">
+                    <input type="text" autofocus id="searchparam" class="form-control" onkeyup=guestsearch(this) autocomplete="off" placeholder="Email Address">
                     <label for="searchparam">Email Address</label>
                 </div>
                 <div id="guestselect">
@@ -502,22 +619,37 @@ function launchcreatenewbooking(element) {
             <hr>
             
             <div class="form-group">
-                <label for="arrival">Arrival Date: </label>
-                <input type="date" class="form-control" id="arrival" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Arrival Date" value="${start}">
-                <label for="departure">Departure Date: </label>
-                <input type="date" class="form-control" id="departure" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Departure Date">
-                <label for="arrival">Pitch: </label>
-                <select name="pitch" class="form-control" id="pitchselect">
-                    <!-- options populate here -->
-                </select>
+                <div class="form-floating mb-3">
+                    <input type="date" class="form-control" id="arrival" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Arrival Date" value="${start}">
+                    <label for="arrival">Arrival Date: </label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="date" class="form-control" id="departure" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Departure Date">
+                    <label for="departure">Departure Date: </label>
+                </div>
+                <div class="form-floating mb-3">
+                    <select name="pitch" class="form-control" id="pitchselect">
+                        <!-- options populate here -->
+                    </select>
+                    <label for="arrival">Pitch: </label>
+                </div>
             </div>
             <hr>
             <div class="form-group">
                 <fieldset>
                     <legend>Party Details</legend>
-                    <input onchange=recalculate() class="form-control" type="text" id="adultno" placeholder="Adults">
-                    <input onchange=recalculate() class="form-control" type="text" id="childno" placeholder="Children">
-                    <input onchange=recalculate() class="form-control" type="text" id="infantno" placeholder="Infants">
+                    <div class="form-floating mb-3">
+                        <input onchange=recalculate() class="form-control" type="text" id="adultno" placeholder="Adults">
+                        <label for="adultno">Adults</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input onchange=recalculate() class="form-control" type="text" id="childno" placeholder="Children">
+                        <label for="childno">Children</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input onchange=recalculate() class="form-control" type="text" id="infantno" placeholder="Infants">
+                        <label for="infantno">Infants</label>
+                    </div>
                 </fieldset>
 
                 <p onclick=addextra()>Add extra</p>
@@ -532,14 +664,18 @@ function launchcreatenewbooking(element) {
             <div class="form-group">
                 <h3>Fee: </h3>
                 <p style="display: inline-block">£</p><p style="display: inline-block" id="rate">-</p>
-                <label for="paid"> Paid: £</label>
-                <input type=number class="form-control" step="0.01" min=0 id="paid" placeholder="0">
-                <label for="paymentmethod"> Payment Method: </label>
-                <select name="paymentmethod" class="form-control" id="paymentmethod">
-                    <option value="Cash">Cash</option>
-                    <option value="Card">Card</option>
-                    <option value="BACS">BACS</option>
-                </select>
+                <div class="form-floating mb-3">
+                    <input type=number class="form-control" step="0.01" min=0 id="paid" placeholder="Paid">
+                    <label for="paid"> Paid £</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <select name="paymentmethod" class="form-control" id="paymentmethod">
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="BACS">BACS</option>
+                    </select>
+                    <label for="paymentmethod"> Payment Method</label>
+                </div>
             </div>
             <button onclick=createnewbooking()>Submit</button>
         </form>`
@@ -1169,4 +1305,11 @@ function addextra(extras) {
 
     })
 }
+
+function repositioncalendar() {
+    repositiondate = document.querySelector('#startdate').value
+    window.location.href=`?startdate=${repositiondate}`
+}
+
+
 

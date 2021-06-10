@@ -472,3 +472,29 @@ def apicreatenewpayment(request):
         data = PaymentSerializer(payment)
         return HttpResponse(data, content_type='application/json')
 
+def apiamendbooking(request, pk):
+    if request.method == "PATCH":
+        payload = json.loads(request.body)
+        booking = Booking.objects.get(pk=pk)
+        
+        # TODO functionality needed here to check if there is already a booking which fouls this amendment
+
+        # gets the length of the original booking.
+        bookinglength = booking.end - booking.start
+        booking.start = datetime.fromtimestamp(int(payload['newstart']) / 1000)
+        booking.end = booking.start + bookinglength
+        booking.pitch = Pitch.objects.get(pk=payload['newpitch'])
+        
+        # recalculate the rates for the new dates
+        rates = Rate.objects.filter()
+
+        booking.save()
+
+        
+
+        return HttpResponse(status=200)
+
+
+
+
+

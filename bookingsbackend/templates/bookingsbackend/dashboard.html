@@ -17,15 +17,6 @@
             <h4>Income Summary</h4>
             <p class="textsummary">£{{paymentsvalue}}</p>
         </div>
-        <div class="dashboarditem" id="suspiciousactivity"><!--shows payments cancelled or edited in last 7 days-->
-            <h4>Suspicious Activity</h4>
-            {% for item in editedpayments %}
-                <p class="textsummary">{{item}}</p>
-            {% endfor %}
-        </div>
-        <div class="dashboarditem" id="forwardoccupancy"><!--rotates week, month and 6 months occupancy graph-->
-            <h4>Forward Occupancy</h4>
-        </div>
     </div>
     <script src="{% static '/js/dashboard.js' %}"></script>
 {% endblock %}

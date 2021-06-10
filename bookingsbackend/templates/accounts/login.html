@@ -1,0 +1,27 @@
+{% extends "bookingsbackend/template.html" %}
+
+{% block content %}
+
+<div id="logincontainer">
+    <div>
+        
+        <form method="POST" action="{% url 'login' %}">
+            {%csrf_token%}
+            <div class="form-floating mb-3">
+                <input class="form-control" type="text" id="username" name="username" placeholder="Username" autofocus>
+                <label for="username">Username</label>
+            </div>
+            <div class="form-floating">
+                <input class="form-control" type="password" id="password" name="password" placeholder="Password">
+                <label for="password">Password</label>
+            </div>
+            <div id="loginbuttoncontainer">
+                <input type="submit" value="Login">
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}
