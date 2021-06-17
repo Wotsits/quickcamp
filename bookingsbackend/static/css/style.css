@@ -114,9 +114,22 @@ h3 {
     padding: 5px;
 }
 
+.balancedue {
+    background-color: red;
+}
+
+.bookingcheckedin {
+    background-color: #15FFFD;
+}
+
+.bookingnotcheckedin{
+    background-color: rgb(42, 147, 130);
+}
+
 .calendaritem p {
     margin: 0px
 }
+
 
 .calendaritem p {
     padding: 0px;
@@ -131,7 +144,7 @@ h3 {
 
 /* Booking pane styling starts here */
 
-#bookingpanewrapper, #paymentdetailswrapper {
+.panewrapper {
     position: fixed;
     top: 0px;
     left: 0px;
@@ -143,7 +156,7 @@ h3 {
     background-color:rgba(33, 35, 51, 0.5);
 }
 
-#bookingpane, #checkinpane {
+.pane, #checkinpane {
     position: relative;
     max-height: 90vh;
     width: 80%;
@@ -190,7 +203,7 @@ form input {
     padding: 16px 12px;
 }
 
-.paymentdetails {
+.paymentdetails, #commentspane, #partypane {
     position: relative;
     padding: 30px;
     background-color: lightgray;

@@ -7,7 +7,16 @@ from .serializers import *
 
 
 urlpatterns = [
+    # Page render routes
     path("", views.calendar, name="calendar"),
+    path("arrivals", views.arrivals, name="arrivals"),
+    path("dashboard", views.dashboard, name="dashboard"),
+
+    # login/logout routes
+    path("login/", views.login_view, name="login"),
+    path("logout/", views.logout_view, name="logout"),
+
+    # API routes
     path("servebookings", views.apiservebookingslist.as_view(queryset=Booking.objects.all(), serializer_class=BookingSerializer), name="apiservebookings"),
     path("servepitches", views.apiservepitchlist.as_view(queryset=Pitch.objects.all(), serializer_class=PitchSerializer), name="apiservepitches"),
     path("booking/<int:pk>", views.apiservedetail.as_view(queryset=Booking.objects.all(), serializer_class=BookingSerializer), name="apiservebookingdetail"),
@@ -18,16 +27,11 @@ urlpatterns = [
     path("fetchrate", views.apiserverate, name="apiserverate"),
     path("servepaymentinfo/<int:pk>", views.apiservepaymentlist.as_view(), name="apiservepayments"),
     path("createnewguest", views.apicreate.as_view(queryset=Guest.objects.all(), serializer_class=GuestSerializer), name="apicreateview"),
-    path("dashboard", views.dashboard, name="dashboard"),
-    path("arrivals", views.arrivals, name="arrivals"),
     path("checkinguest", views.checkinguest, name="apicheckinbooking"),
     path("checkinvehicle", views.checkinvehicle, name="apicheckinbooking"),
-    path("viewbooking/<int:pk>", views.viewbooking, name="viewbooking"),
     path("amendpayment", views.apiamendpayment, name="amendpayment"),
     path("deletepayment/<int:pk>", views.apideletepayment, name="deletepayment"),
     path("createnewpayment", views.apicreatenewpayment, name="createpayment"),
-    path("login/", views.login_view, name="login"),
-    path("logout/", views.logout_view, name="logout"),
     path("serveextras", views.apiserveextras, name="apiserveextras"),
     path("amendbooking/<int:pk>", views.apiamendbooking, name="amendbooking")
 

@@ -26,7 +26,7 @@ from .serializers import *
 
 ''' 
 
-#This function is used to update payments in the booking record. 
+#This function is used to update payments in the booking record as a batch process when my testing has made a mess of things. 
 
 def paymentsupdate(request):
     bookings = Booking.objects.all()
@@ -44,9 +44,10 @@ def paymentsupdate(request):
     return redirect(reverse('calendar'))
 
 '''
-def logout_view(request):
-    logout(request)
-    return redirect(reverse("login"))
+
+##################################################
+############# LOG IN / LOG OUT VIEWS #############
+##################################################
 
 def login_view(request):
     if request.method == "GET":
@@ -65,23 +66,50 @@ def login_view(request):
             return redirect(reverse("login"))
 
 
+def logout_view(request):
+    logout(request)
+    return redirect(reverse("login"))
+
+##################################################
+##################################################
+##################################################
+
+
+
+##################################################
+############# Route rendering views ##############
+##################################################
+
+
+# renders the calendar template when called.
 @login_required
 def calendar(request):
     return render(request, "bookingsbackend/calendar.html")
 
+
+
+# renders the dashboard template when called and populates it.  This view presents a summary of the day's activity 
 @login_required
 def dashboard(request):
-    ###### presents a summary of the day's activity ######
+
+    # obtain the dataset once at the beginning of the flow
     arrivals = Booking.objects.filter(start=date.today())
         
-    #presents a visual summary of forecast arrival times
+    ######## DASHBOARD ELEMENT 1 ########
+    # presents a visual summary of forecast arrival times
+    
+    # initialize a list of time strings.
     arrivaltimes = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"]
+    # initialize a list to hold counts against each time string
     arrivalscountbytime = []
 
+    # for each string in arrivaltimes, check for that string in arrivals queryset->ETA and append the count to the count list
     for time in arrivaltimes:
         arrivalscountbytime.append(arrivals.filter(eta=time).count())
     
+    # get the highest count in the list
     highestcount = max(arrivalscountbytime)
+    # use that highestcount to determine the ylim value for the graph. 
     if highestcount <= 5:
         ylim = 5
     elif highestcount > 5 and highestcount <= 25:
@@ -91,8 +119,9 @@ def dashboard(request):
     elif highestcount > 50 and highestcount <= 100:
         ylim = 100
     elif highestcount > 100:
-        ylim = 200
+        ylim = highestcount+20
 
+    # plot the graph using matplotlib syntax
     plt.figure(figsize=(8, 4))
     plt.plot(arrivaltimes, arrivalscountbytime)
     plt.xlabel("Time")
@@ -100,23 +129,30 @@ def dashboard(request):
     plt.ylim([0, ylim])
     plt.tight_layout()
     plt.fill_between(arrivaltimes, arrivalscountbytime, facecolor='#2A9382')
+    # save the graph - TODO as path needs to not be hardcoded
     savepath = '/Users/admin/Documents/SimonsProjects/CS50W/QuickCamp/quickcamp/bookingsbackend/static/images/arrivalsbytime.png'
     plt.savefig(savepath)
     
-    #presents a visual summary of due vs checked-in
-    #data
+
+    ######## DASHBOARD ELEMENT 2 ########
+    # presents a visual summary of due vs checked-in
+
+    # obtain a count of all today's arrivals.
     arrivalscount = arrivals.count()
+    # obtain a count of all checked-in arrivals. 
     checkedincount = [arrivals.filter(checkedin=True).count()]
-    duecount=[arrivals.filter(checkedin=False).count()]
+    # calculate due arrivals
+    duecount = arrivalscount = checkedincount 
+    # set value of y for plotting
     y = [0]
 
-    #plot
+    # plot using matplotlib syntax
     plt.figure(figsize=(4,1))
     plt.barh(y, duecount, height=1, color='#2A9382')
     plt.barh(y, checkedincount, height=1, color='#15FFFD', left=duecount)
 
-    #labels
-    #decide distribution
+    # labels
+    # decide distribution of labels
     if arrivalscount < 25:
         ticksdistribution = 1
     elif arrivalscount < 100:
@@ -127,56 +163,70 @@ def dashboard(request):
     y_labels = ['Today']
     plt.yticks(y, y_labels)
     
-    #grid
+    # set grid
     plt.grid(axis='x')
 
-    #save
+    # save - TODO as path needs to not be hardcoded
     plt.tight_layout()
     savepath = '/Users/admin/Documents/SimonsProjects/CS50W/QuickCamp/quickcamp/bookingsbackend/static/images/arrivals.png'
     plt.savefig(savepath)
 
-    #presents a summary of payments received today
+    ######## DASHBOARD ELEMENT 3 ########
+    # presents a summary of payments received today
+
+    # obtain dataset of payments made today.
     payments = Payment.objects.filter(creationdate=date.today())
+    # create a list to store the payment values
     paymentsvalue = []
+    # populate that list
     for payment in payments:
         paymentsvalue.append(payment.value)
-        
+    
+    # sum the values in the list and present to 2dp float.
     paymentsvalue = sum(paymentsvalue)
     paymentsvalue = '%.2f' % paymentsvalue
 
-    #presents a summary of payments received today
-    editedpayments = PaymentChange.objects.filter(datestamp__range=[date.today() - timedelta(weeks=2), date.today()])
-    print(editedpayments)
-    if len(editedpayments) == 0:
-        editedpayments = "Relax, everything's fine"
-
+    # render page
     return render(request, "bookingsbackend/dashboard.html", {
         'paymentsvalue': paymentsvalue,
-        'editedpayments': editedpayments
     })
 
+
+
+
+# renders the arrivals template when called and populates it.  This view presents the daily arrivals list.
 @login_required
 def arrivals(request):
+
+    # grab all the arrivals due today
     allarrivals = Booking.objects.filter(start=date.today())
+    # filter for due and checked-in and order each by guest surname.
     duearrivals = allarrivals.filter(checkedin=False).order_by("guest__surname")
     checkedinarrivals = allarrivals.filter(checkedin=True).order_by("guest__surname")
-    for item in duearrivals:
-        print(item.bookingparty)
-
+    
+    # render the page. 
     return render(request, "bookingsbackend/arrivals.html", {
         "duearrivals": duearrivals,
         "checkedinarrivals": checkedinarrivals
     })
 
-@login_required
-def viewbooking(request, pk):
-    booking = Booking.objects.get(pk=pk)
-    return render(request, 'bookingsbackend/bookingdetail.html', {
-        "booking": booking
-    })
-    
-######### API END POINTS ###########
 
+    
+##################################################
+##################################################
+##################################################
+
+
+
+##################################################
+################# API ENDPOINTS ##################
+##################################################
+
+################# Class-based views ##############
+
+# CBV serves pitch list
+# This view serves the pitches to render in the calendar view.
+# Customer get_queryset method filters pitch list by site. 
 class apiservepitchlist(ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
@@ -184,9 +234,13 @@ class apiservepitchlist(ListAPIView):
         site = self.request.user.site
         return Pitch.objects.filter(site=site)
 
+# CBV serves bookings list
+# This view serves a list of bookings to render in the calendar view.  
+# Custom get_queryset method filters bookings to show those starting, ending or crossing the calendar date range.
 class apiservebookingslist(ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
+
     def get_queryset(self):
         site = self.request.user.site
         start = parser.parse(self.request.GET['start'])
@@ -197,12 +251,21 @@ class apiservebookingslist(ListAPIView):
         queryset3 = bookingsforsite.filter(start__range=["2001-01-01", start], end__range=[end, "2100-12-31"])
         return queryset1 | queryset2 | queryset3
 
+
+# CBV create view.  
+# Used for simple create actions.
 class apicreate(CreateAPIView):
     pass
 
+
+# CBV list view.
+# Used for guest search functionality. 
 class apiguestsearch(ListAPIView):
     search_fields = []
 
+
+# CBV list view. 
+# Custom get_queryset method to serve payments associated with specific booking. 
 class apiservepaymentlist(ListAPIView):
     serializer_class = PaymentSerializer
     
@@ -211,9 +274,16 @@ class apiservepaymentlist(ListAPIView):
         return Payment.objects.filter(booking=Booking.objects.get(id=bookingid))
 
 
+# CBV retrieve view.
+# Used for simple retrieve actions including serving booking model instance.
 class apiservedetail(RetrieveAPIView):
     pass
 
+
+
+########## Function-based Views ############
+
+# helper function
 def updateBookingIfAllIn(booking):
     '''
     This function is called after a member of the party is checked in or out.  
@@ -238,21 +308,27 @@ def updateBookingIfAllIn(booking):
     return booking
 
 
+# FBV to check-in a guest
 def checkinguest(request):
+    # unpackage payload
     payload = json.loads(request.body)
     pk = payload['pk']
     checkedin = payload['checkedin']
 
+    # get the partymember being checked in on frontend and update checkedin boolean
     guest = PartyMember.objects.get(pk=pk)
     guest.checkedin = checkedin
     guest.save()
+    # get the related booking and pass into the helper function above. 
     booking = guest.booking
     booking = updateBookingIfAllIn(booking)
-    print(booking)
 
+    # return the booking
     data = core_serializers.serialize('json', [booking, ])                                                       #serialize availablepitches
     return HttpResponse(data, status=200, content_type='application/json') 
     
+
+# FBV to check-in a vehicle TODO this can be condensed with check-in guest as same flow/logic
 def checkinvehicle(request):
     payload = json.loads(request.body)
     pk = payload['pk']
@@ -268,32 +344,42 @@ def checkinvehicle(request):
     return HttpResponse(data, status=200, content_type='application/json')
     
 
-
+# FBV to amend payment instance
 def apiamendpayment(request):
+    
+    # unpack payload.
     payload = json.loads(request.body)
     pk = payload['pk']
     creationdate = payload['creationdate']
     value = payload['value']
     method = payload['method']
+    
+    # get target payment instance.
     payment = Payment.objects.get(pk=pk)
-    #obtains original state for payment log entry later
+
+    # obtains original state for payment log entry later.
     originalstate = f'CreationDate = {payment.creationdate}, value = {payment.value}, method = {payment.method}'
     
-
+    # update the instance fields.
     payment.creationdate = creationdate
     payment.value = value
     payment.method = method
     payment.save()
 
+    # set new state description for addition to log.
     newstate = f'CreationDate = {payment.creationdate}, value = {payment.value}, method = {payment.method}'
 
-
-    # sum value of payments
+    # sum value of payments and update the booking instance.
+    # get the booking assocated with the payment.
     booking = payment.booking
+    # get all payments associated with that booking
     payments = Payment.objects.filter(booking=booking)
+    # initialise a variable to store the sum of payments.
     sum = 0
+    # loop payments that add to sum
     for payment in payments:
         sum = sum + payment.value
+    # update the booking instance 
     booking.totalpayments = sum
     booking.balance = booking.bookingrate - booking.totalpayments
     booking.save()
@@ -303,12 +389,16 @@ def apiamendpayment(request):
     entry = PaymentChange(payment=payment.id, comment=paymentlogcomment, user=request.user)
     entry.save()
 
+    # return the payment data.  
     paymentdata = PaymentSerializer(payment)
     return HttpResponse(paymentdata, status=200, content_type='application/json')
    
+
+# FBV to delete payment instance.
 @login_required
 def apideletepayment(request, pk):
     
+    # get the payment instance.
     payment = Payment.objects.get(pk=pk)
 
     # create paymentlog entry
@@ -319,7 +409,7 @@ def apideletepayment(request, pk):
     # delete the payment    
     payment.delete()
 
-    # sum value of payments
+    # sum value of payments - TODO factor out to helper function as used twice.
     booking = payment.booking
     payments = Payment.objects.filter(booking=booking)
     sum = 0
@@ -329,31 +419,41 @@ def apideletepayment(request, pk):
     booking.balance = booking.bookingrate - booking.totalpayments
     booking.save()
 
+    # return 200
     return HttpResponse(status=200)
    
+
+# FBV to serve rates to front end
 @login_required
 def apiserverate(request):
+    # parse params from GET request
     start = date.fromisoformat(request.GET['start'])
     end = date.fromisoformat(request.GET['end'])
 
-    #collate the applicable rates
+    # collate the applicable rates
     queryset1 = Rate.objects.filter(start__range=[start, end-timedelta(1)])
     queryset2 = Rate.objects.filter(end__range=[start+timedelta(1), end])
     queryset3 = Rate.objects.filter(start__range=["2001-01-01", start], end__range=[end, "2100-12-31"])
     rates = queryset1 | queryset2 | queryset3
 
+    # return the applicable rates
     data = core_serializers.serialize("json", rates)                                                          #serialize availablepitches
     return HttpResponse(data, content_type='application/json')  
 
 
+# FBV to serve list of extras - TODO change to CBV.
 @login_required
 def apiserveextras(request):
     availableextras = Extra.objects.filter(site=request.user.site)
     data = core_serializers.serialize("json", availableextras)
     return HttpResponse(data, content_type='application/json')
 
+
+# FBV to create new booking.
 @login_required
 def apicreatenewbooking(request):
+
+    # unpack payload
     if request.method == "POST":
         payload = json.loads(request.body)
         guestid = payload['guestid']
@@ -368,13 +468,14 @@ def apicreatenewbooking(request):
         balance = bookingrate - bookingpaid
         paymentmethod = payload['paymentmethod']
 
+    # get the guest and pitch instances associated with the ids sent from frontend.
     guest = Guest.objects.get(id=guestid)
     pitch = Pitch.objects.get(id=pitchid)
 
     # catch circumstances where booking made which fouls this booking
     duplicate = False
     try: 
-        # this needs work as it doesn't do what I need it to do.  Only catches exact matches, not bookings that straddle dates.
+        # TODO - this needs work as it doesn't do what I need it to do.  Only catches exact matches, not bookings that straddle dates.
         Booking.objects.filter(pitch=pitch, arrival=arrival, departure=departure)
         duplicate = True
     except: 
@@ -386,6 +487,7 @@ def apicreatenewbooking(request):
     #############################
 
     else: 
+        # make new booking instance.
         newbooking = Booking(
             pitch=pitch, 
             guest=guest, 
@@ -411,7 +513,7 @@ def apicreatenewbooking(request):
         # count the total number of guests in the party.
         guestnumber = int(adultno) + int(childno) + int(infantno)
         
-        # create a blank party member record for each member of the party to updated later.
+        # create a blank party member record for each member of the party to updated later. Names to be updated later by guest in public facing app.
         for i in range(guestnumber):
             partymember = PartyMember(
                 firstname="",
@@ -420,81 +522,151 @@ def apicreatenewbooking(request):
             )
             partymember.save()
 
-
+    #return the booking.
     data = BookingSerializer(newbooking)
     return HttpResponse(data, content_type='application/json')
 
+
+# FBV to serve available pitches (used by JS createnewbooking pane).
 @login_required
 def apiserveavailablepitchlist(request):
     
+    #TODO - this FBV needs work as inefficient.  Some early work here!
+ 
     # obtains the iso format date from the GET params and converts to Date object
     start = date.fromisoformat(request.GET['start'])
     end = date.fromisoformat(request.GET['end'])
 
+    # get all bookings within the date range
     bookingsstart = Booking.objects.filter(start__range=[start, end-timedelta(1)])                                  #extract all bookings where start date is within requested date range
     bookingsend = Booking.objects.filter(end__range=[start+timedelta(1), end])                                      #extract all bookings where end date is within requested date range
     bookingsacross = Booking.objects.filter(start__range=["2001-01-01", start], end__range=[end, "2100-12-31"])     #extract all bookings where dates straddle requested date range
     bookings = bookingsstart | bookingsend | bookingsacross                                                         #combine those lists
 
+    # initialize variable to contain list of unavailable pitches.
     unavailablepitches = []                                                                                         #instantiate list variable to store unavailable pitches
+    # append each pitch in bookings to that list
     for item in bookings:                                                                                           #extracts the pitch objects from those bookings and adds them to the unavailable pitches list. 
         unavailablepitches.append(item.pitch)
            
-    allpitches = Pitch.objects.all()                                                                                #extract a queryset of all pitches on site.
+    # get all pitches associated with the user's site 
+    allpitches = Pitch.objects.filter(site=request.user.site)                                                                                #extract a queryset of all pitches on site.
     
+    # intialize an empty dataset
     availablepitches = Pitch.objects.none()                                                                         #instatiates list viariable to store available pitches
+    # loop through all pitches and if pitch does't appear in unavailable pitches, add the pitch instance.
     for pitch in allpitches:                                                                                        #check whether each item in allpitches is in unavailablepitches.  If not, add to availablepitches
         if pitch not in unavailablepitches:
             availablepitches |= Pitch.objects.filter(pk=pitch.pk)
     
+    #return the available pitches
     data = core_serializers.serialize("json", availablepitches)                                                          #serialize availablepitches
     return HttpResponse(data, content_type='application/json')                                                      #return json obj
    
-####################################
 
+# FBV to create new payment.
+@login_required
 def apicreatenewpayment(request): 
     if request.method == "POST":
+        # unpack payload
         payload = json.loads(request.body)
         bookingid = payload['bookingid']
         date = payload['date']
         value = payload['value']
         method = payload['method']
 
+        # create new payment instance.
         payment = Payment(
             creationdate=date,
             value=value,
             method=method,
             booking=Booking.objects.get(pk=int(bookingid))
         )
-        
         payment.save()
 
+        # TODO add recalculate helper function for booking instance here.
+
+        # return the payment
         data = PaymentSerializer(payment)
         return HttpResponse(data, content_type='application/json')
 
+
+# FBV to amend a booking instance
+@login_required
 def apiamendbooking(request, pk):
+
     if request.method == "PATCH":
+        # unpack payload
         payload = json.loads(request.body)
+        # get the target booking instance
         booking = Booking.objects.get(pk=pk)
         
-        # TODO functionality needed here to check if there is already a booking which fouls this amendment
+        #the following logic detects the type of booking amendment being sent and implements change accordingly
+        #checks is it is a new lead guest amendment
+        if 'newguestid' in payload:
+            # unpack
+            newguestid = payload['newguestid']
+            # update instance
+            booking.guest = Guest.objects.get(pk=newguestid)
+            booking.save()
 
-        # gets the length of the original booking.
-        bookinglength = booking.end - booking.start
-        booking.start = datetime.fromtimestamp(int(payload['newstart']) / 1000)
-        booking.end = booking.start + bookinglength
-        booking.pitch = Pitch.objects.get(pk=payload['newpitch'])
+        #checks if it is a partynumber change
+        elif 'newadultno' in payload:
+            # unpack 
+            newadultno = payload['newadultno']
+            newchildno = payload['newchildno']
+            newinfantno = payload['newinfantno']
+
+            # update instance
+            booking.adultno = newadultno
+            booking.childno = newchildno
+            booking.infantno = newinfantno
+            booking.save()
+
+            # TODO - need to recalulate here. This should be via a helper function as used elsewhere.
         
-        # recalculate the rates for the new dates
-        rates = Rate.objects.filter()
+        #checks if it is a duration change
+        elif 'newdurantion' in payload:
+            # TODO - write logic for booking durantion change
+            print('new duration request detected')
 
-        booking.save()
+        #else, this must be a date change.
+        else: 
+            # unpack
+            requestedpitch = Pitch.objects.get(pk=payload['newpitch'])
+            requestedstart = datetime.fromtimestamp(int(payload['newstart']) / 1000).date()
+            bookinglength = booking.end - booking.start
+            requestedend = requestedstart + bookinglength
+            
+            # checks if there is already a booking which fouls this amendment
+            bookingsonpitch = Booking.objects.filter(pitch=requestedpitch)
+            bookingsstartinginrange = bookingsonpitch.filter(start__range=[requestedstart, requestedend-timedelta(1)])
+            bookingsendinginrange = bookingsonpitch.filter(end__range=[requestedstart+timedelta(1), requestedend])
+            bookingscrossingrange = bookingsonpitch.filter(start__range=["1901-01-01", requestedstart], end__range=[requestedend, '2099-12-31'])
+            bookingsimpactingrange = bookingsstartinginrange | bookingsendinginrange | bookingscrossingrange
+            if not len(bookingsimpactingrange) == 0:
+                return HttpResponse(status=400)
 
-        
+            # update booking instance
+            booking.start = requestedstart
+            booking.end = requestedend
+            booking.pitch = requestedpitch
+            
+            # TODO - Work in progress - recalculate the rates for the new dates
+            relevantrates = Rate.objects.all()
+            ratesdict = {}
+            activedate = ""
+            for rate in relevantrates:
+                activedate = rate.start
+                while activedate < rate.end+timedelta(1):
+                    ratesdict[activedate]["adult"] = rate.adult
+                    ratesdict[activedate]["child"] = rate.child
+                    ratesdict[activedate]["infant"] = rate.infant
+                    activedate = activedate+timedelta(1)
+            print(ratesdict)
+                        
+            booking.save()
 
-        return HttpResponse(status=200)
-
-
-
-
-
+        # return booking.
+        data = core_serializers.serialize('json', [booking, ])  
+        return HttpResponse(data, status=200, content_type='application/json')

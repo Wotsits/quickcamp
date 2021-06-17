@@ -35,7 +35,11 @@ const calendar = document.querySelector('#calendar')
 const calendarbody = document.createElement('div')
 calendarbody.className = "calendarbody"
 
-
+/* -------------------------------------------------------------- */
+/* -------------------------------------------------------------- */
+/* ---------------------- START OF LOAD FLOW -------------------- */
+/* -------------------------------------------------------------- */
+/* -------------------------------------------------------------- */
 
 ////////////////////////// CALLED FIRST, SETS UP LEFT HAND COLUMN OF CALENDAR
 
@@ -79,11 +83,6 @@ async function setupcalendarrowtitles() {
     
 }
 
-
-
-
-
-
 /////////////////////////// CALLED SECOND, SETS UP COLUMN HEADER ROW OF CALENDAR
 
 function setupcalendarheader() {
@@ -99,11 +98,6 @@ function setupcalendarheader() {
     }
     calendarbody.append(calendarheader)
 }
-
-
-
-
-
 
 ////////////////////// CALLED THIRD, SETS UP CALENDAR BODY
 
@@ -128,12 +122,6 @@ function setupcalendarbody() {
         calendarbody.append(pitch)
     }
 }
-
-
-
-
-
-
 
 //////////////////////// CALLED LAST, FETCHES BOOKINGS AND POPULATES CALENDAR WITH THOSE BOOKINGS
 
@@ -164,13 +152,13 @@ function fetchbookings() {
                 let elementdate = element.getAttribute("data-date")
                 if (parseInt(elementdate) >= bookingstart && parseInt(elementdate) < bookingend) {
                     if (balance !== 0.00) {
-                        element.style.backgroundColor = "red"
+                        element.classList.add("balancedue")
                     }
                     else if (checkedin) {
-                        element.style.backgroundColor = "#15FFFD"
+                        element.classList.add("bookingcheckedin")
                     }
                     else {
-                        element.style.backgroundColor = "rgb(42, 147, 130)"
+                        element.classList.add("bookingnotcheckedin")
                     }
 
                     element.setAttribute("data-bookingid", bookingid)
@@ -206,6 +194,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     calendarinfinitescroll()
 
 })
+
+/* -------------------------------------------------------------- */
+/* -------------------------------------------------------------- */
+/* --------------------- END OF LOAD FLOW ----------------------- */
+/* -------------------------------------------------------------- */
+/* -------------------------------------------------------------- */
+
+
 
 
 
@@ -309,9 +305,16 @@ function movebooking(bookingid) {
                 },
                 body: JSON.stringify(payload)
             })
-            .then(response => response.json())
+            .then((response) => {
+                if (!(response.status === 200)) {
+                    return alert("Booking move unsuccessful.  Please reload the page and try again")
+                }
+                else {
+                    return response.json()
+                }
+            })    
             .then(data => {
-                console.log(data)
+                document.location.reload()
             })
         })
     })
@@ -474,9 +477,12 @@ function calendarinfinitescroll() {
 
 function displaybookingpane(bookingid) {
     let bookingpanewrapper = document.createElement('div')
-    bookingpanewrapper.setAttribute('id', 'bookingpanewrapper')
+    bookingpanewrapper.className = "panewrapper"
+    bookingpanewrapper.id = "bookingpanewrapper"
+
     let bookingpane = document.createElement('div')
-    bookingpane.setAttribute('id', 'bookingpane')
+    bookingpane.id = 'bookingpane'
+    bookingpane.className = "pane"
 
     fetch(`booking/${bookingid}`, {
         method: 'GET'
@@ -495,12 +501,15 @@ function displaybookingpane(bookingid) {
         let payments = data.totalpayments
         let balance = bookingrate - payments
         let comments = data.commentsbybooking
-        
-        
+        let bookingparty = data.bookingparty
+        let bookingvehicles = data.bookingvehicles
+        let locked = data.locked
+        let checkedin = data.checkedin
+
         
         bookingpane.innerHTML = `
             <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
-            <h3>Booking ${bookingid}</h3>
+            <h3 id="bookingpanetitle">Booking ${bookingid}</h3>
             <div id="importantbookingcomments"></div>
             <div class="basicbookinginfo"> 
                 <div><p><strong>Pitch: </strong></p><p> ${pitch}</p></div>
@@ -510,9 +519,9 @@ function displaybookingpane(bookingid) {
             </div>
             <hr>
             <div class="panepartydetail">
-                <p class="partydetail"><i class="fas fa-male"></i> - ${adults} |
-                <i class="fas fa-child"></i> - ${children} |
-                <i class="fas fa-baby"></i> - ${infants}</p>
+                <p class="partydetail"><i class="fas fa-male"></i> ${adults} |
+                <i class="fas fa-child"></i> ${children} |
+                <i class="fas fa-baby"></i> ${infants}</p>
             </div>
             <hr/>
             <div class="financesummary">
@@ -533,46 +542,289 @@ function displaybookingpane(bookingid) {
                 </fieldset>
             </div>
             <div class="controlbuttons">
-                <button class="btn btn-secondary" onclick="location.href='viewbooking/${bookingid}';"">View/Edit Full Booking</button>    
+                <button id="loadeditmenubutton" class="btn btn-secondary")>View/Edit Full Booking</button>    
                 <button class="btn btn-secondary" onclick=loadpaymentdetail(${bookingid})>View Payments Detail</button>
-                <button class="btn btn-secondary" onclick=loadcomments(${bookingid})>View Comments</button>
+                <button id="loadcommentsbutton" class="btn btn-secondary">View Comments</button>
+                <button id="loadpartybutton" class="btn btn-secondary">View Party</button>
             </div>
             `
-
-        // check whether any of the booking comments are flagged as important
-        
-        
-        
+        //build the display
         bookingpanewrapper.append(bookingpane)
         body.append(bookingpanewrapper)
+
+        //add event listener to load comments button and pass in the comments. 
+        loadeditmenubutton = document.querySelector("#loadeditmenubutton")
+        loadeditmenubutton.addEventListener("click", () => {
+            loadeditmenu(data)
+        })
+
+        //add event listener to load comments button and pass in the comments. 
+        loadcommentsbutton = document.querySelector("#loadcommentsbutton")
+        loadcommentsbutton.addEventListener("click", () => {
+            loadcomments(comments)
+        })
+
+        //add event listener to load party button and pass in the party details.         
+        loadpartybutton = document.querySelector("#loadpartybutton")
+        loadpartybutton.addEventListener("click", () => {
+            loadparty(bookingparty, bookingvehicles)
+        })
         
+        //visual indication in booking pane that booking is checked in.
+        if (data.checkedin){
+            document.querySelector("#bookingpanetitle").className = "checkedin"
+            document.querySelector(".panepartydetail").classList.add("checkedin")
+        }
+
+        importantbookingcommentsdiv = document.querySelector("#importantbookingcomments")
+        // check whether any of the booking comments are flagged as important
         for (i=0; i<comments.length; i++) {
             if (comments[i].important) {
                 comment = document.createElement("p")
                 comment.textContent = `${comments[i].comment}`
                 comment.className = "alert alert-danger"
-                document.querySelector("#importantbookingcomments").append(comment)
+                importantbookingcommentsdiv.append(comment)
             }
         }
-        
     })
 }
 
 
+function loadcomments(comments) {
+    const commentspanewrapper = document.createElement("div");
+    commentspanewrapper.className = "panewrapper";
+    commentspanewrapper.id = "commentspanewrapper";
 
+    const commentspane = document.createElement("div");
+    commentspane.id = "commentspane";
+    commentspane.innerHTML = `
+        <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(commentspanewrapper)></i></p>
+        <h3>Booking Comments</h3>
+        `
 
+    body.append(commentspanewrapper);
+    commentspanewrapper.append(commentspane);
 
+    if (comments.length === 0) {
+        commentitem = document.createElement("div");
+        commentitem.textContent = "There are no comments associated with this booking."
+        commentspane.append(commentitem);
+    }
+    else {
+        for (i=0; i<comments.length; i++) {
+            commentitem = document.createElement("div");
+            commentitem.textContent = `${comments[i].comment}`;
+            commentitem.setAttribute("role", "alert");
+            if (comments[i].important) {
+                commentitem.className = "alert alert-danger";
+            }
+            else {
+                commentitem.className = "alert alert-secondary";
+            }
+            commentspane.append(commentitem);
+        }
+    }
+}
 
+function loadparty(bookingparty, bookingvehicles) {
+    const partypanewrapper = document.createElement("div");
+    partypanewrapper.className = "panewrapper";
+    partypanewrapper.id = "partypanewrapper";
 
+    const partypane = document.createElement("div");
+    partypane.id = "partypane";
+    partypane.className = ""
+    partypane.innerHTML = `
+        <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(partypanewrapper)></i></p>
+        <h3>Party Details</h3>
+        <div id="partydetails"></div>
+        <div id="partyvehicles"></div>
+        `
 
+    body.append(partypanewrapper);
+    partypanewrapper.append(partypane);
 
+    const partydiv = document.querySelector("#partydetails")
 
+    if (bookingparty.length === 0) {
+        let partyitem = document.createElement("div");
+        partyitem.textContent = "There are no party members associated with this booking."
+        partydiv.append(partyitem);
+    }
+    else {
+        for (i=0; i<bookingparty.length; i++) {
+            let partyitem = document.createElement("div");
+            partyitem.textContent = `${bookingparty[i].firstname}, ${bookingparty[i].surname}`;
+            partyitem.setAttribute("role", "alert");
+            if (bookingparty[i].checkedin) {
+                partyitem.className = "alert alert-success";
+            }
+            else {
+                partyitem.className = "alert alert-secondary";
 
+            }
+            
+            partydiv.append(partyitem)
+        }
+    }
 
+    const vehiclesdiv = document.createElement("div")
+   
+    if (bookingvehicles.length === 0) {
+        partyitem = document.createElement("div");
+        partyitem.textContent = "There are no party vehicles associated with this booking."
+        vehiclesdiv.append(partyitem);
+    }
+    else {
+        for (i=0; i<bookingparty.length; i++) {
+            partyitem = document.createElement("div");
+            partyitem.textContent = `${bookingvehicles[i].vehreg}`;
+            partyitem.setAttribute("role", "alert");
+            if (bookingvehicles[i].checkedin) {
+                partyitem.className = "alert alert-success";
+            }
+            else {
+                partyitem.className = "alert alert-secondary";
 
+            }
+            
+            vehiclesdiv.append(partyitem);
+        }
+    }
+    partydiv.append(vehiclesdiv)
+    partypane.append(partydiv);
 
+}
 
+function loadeditmenu(bookingdata) {
+    const editpanewrapper = document.createElement("div");
+    editpanewrapper.className = "panewrapper";
+    editpanewrapper.id = "editpanewrapper";
 
+    const editpane = document.createElement("div");
+    editpane.className = "pane"
+    editpane.id = "editpane"
+    editpane.innerHTML = `
+        <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(editpanewrapper)></i></p>
+        <h3>Booking Edit Menu</h3>
+        <div id="editbuttons">
+            <button type="button" class="btn btn-secondary" onclick='editleadguest(${bookingdata.id}, ${bookingdata.guest.id})'>Edit Lead Guest</button>
+            <button type="button" class="btn btn-secondary" onclick='editpartynumbers(${bookingdata.id}, ${bookingdata.adultno}, ${bookingdata.childno}, ${bookingdata.infantno})'>Edit Party Numbers</button>
+            <button type="button" class="btn btn-secondary" onclick='editstayduration(${bookingdata.id}, "${bookingdata.start}", "${bookingdata.end}")'>Edit Stay Duration</button>
+        </div>
+        <div id="editactionpanel"></div>
+        `
+
+    body.append(editpanewrapper);
+    editpanewrapper.append(editpane);
+
+}
+
+function editleadguest(bookingid, leadguest) {
+    editactionpanel = document.querySelector("#editactionpanel")
+    editactionpanel.innerHTML = `
+        <h3>Search for New Lead Guest</h3>
+        <input type="text" autofocus onKeyUp=guestsearch(this) id="guestsearch" class="form-control" placeholder="Email">
+        <div id="guestselect">
+            <fieldset>
+                <legend>Existing Guests</legend>
+                <div id="searchresultsdiv"></div>
+            </fieldset>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick=updateGuest(${bookingid})>Update Lead Guest</button>
+    `  
+
+}
+
+function editpartynumbers(bookingid, adults, children, infants) {
+    editactionpanel = document.querySelector("#editactionpanel")
+    editactionpanel.innerHTML = `
+        <h3>Edit Party Numbers</h3>
+        
+        <div class="form-floating mb-3">
+            <input id="newdaultno" type="number" class="form-control" step=1 value="${adults}"></input>
+            <label for="adults">Adults</label>
+        </div>
+        <div class="form-floating mb-3">
+            <input id="newchildno" type="number" class="form-control" step=1 value="${children}"></input>
+            <label for="adults">Children</label>
+        </div>
+        <div class="form-floating mb-3">
+            <input id="newinfantno" type="number" class="form-control" step=1 value="${infants}"></input>
+            <label for="adults">Infants</label>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick=updatePartyNumbers(${bookingid})>Update Party Numbers</button>
+    `
+}
+
+function updatePartyNumbers(bookingid) {
+    newadultno = document.querySelector("#newadultno").value
+    newchildno = document.querySelector("#newchildno").value
+    newinfantno = document.querySelector("#newinfantno").value
+
+    
+    payload = {
+        "newadultno": newadultno,
+        "newchildno": newchildno,
+        "newinfantno": newinfantno
+    }
+    
+    fetch(`amendbooking/${bookingid}`, {
+        method: "PATCH",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then((response) => {
+        if (!(response.status === 200)) {
+            return alert("Party number update unsuccessful.  Please reload the page and try again")
+        }
+        else {
+            return response.json()
+        }
+    })    
+    .then(data => {
+        alert("Party numbers updated")
+        closepane(bookingpanewrapper)
+        displaybookingpane(bookingid)
+    })
+}
+
+function editstayduration(bookingid, bookingstart, bookingend) {
+    console.log(bookingstart, bookingend)
+}
+
+function updateGuest(bookingid) {
+    guestid = document.querySelector("#guestid").textContent
+    
+    payload = {
+        "newguestid": guestid
+    }
+    
+    fetch(`amendbooking/${bookingid}`, {
+        method: "PATCH",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then((response) => {
+        if (!(response.status === 200)) {
+            return alert("Lead guest update unsuccessful.  Please reload the page and try again")
+        }
+        else {
+            return response.json()
+        }
+    })    
+    .then(data => {
+        alert("Lead guest updated")
+        closepane(bookingpanewrapper)
+        displaybookingpane(bookingid)
+    })
+}
 
 
 ///////////////////////// NEW BOOKING CREATION
@@ -590,9 +842,12 @@ function launchcreatenewbooking(element) {
     start = start.toISOString().substring(0, 10)
     
     let bookingpanewrapper = document.createElement('div')
-    bookingpanewrapper.setAttribute('id', 'bookingpanewrapper')
+    bookingpanewrapper.className = "panewrapper"
+    bookingpanewrapper.id = "bookingpanewrapper"
+
     let bookingpane = document.createElement('div')
-    bookingpane.setAttribute('id', 'bookingpane')
+    bookingpane.id = 'bookingpane'
+    bookingpane.className = "pane"
 
     bookingpane.innerHTML = `
         <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
@@ -683,6 +938,7 @@ function guestsearch(element) {
     searchresultsdiv = document.querySelector('#searchresultsdiv')
     searchresultsdiv.innerHTML = ""
     searchparam = element.value
+    console.log(searchparam)
     if (searchparam.length == 0) {
         return
     }
@@ -912,7 +1168,8 @@ function loadpaymentdetail(bookingid) {
     .then(response => response.json())
     .then(data => {
         paymentdetailslayer = document.createElement("div")
-        paymentdetailslayer.setAttribute("id", "paymentdetailswrapper")
+        paymentdetailslayer.className = "panewrapper"
+        paymentdetailslayer.id = "paymentdetailswrapper"
 
         paymentdetails = document.createElement("div")
         paymentdetails.className = "paymentdetails"
