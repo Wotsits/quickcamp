@@ -4,23 +4,35 @@ JS for calendar.html
 
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
+/////// WHAT IS TODAY IN THE EYES OF THE CALENDAR
+
+// grab the queryString from the url
 const queryString = window.location.search
+// grab the searchparams from the querystring
 const urlParams = new URLSearchParams(queryString)
+// set today variable to either today or the startdate url get param. 
 if (urlParams.get("startdate")) {
     today = new Date(urlParams.get("startdate"))
 } else {
     today = new Date(Date.now())
 }
 
-document.querySelector('#startdate').value = today.toISOString().slice(0, 10)
+// set the date input to the value of startdate variable.
+document.querySelector('#startdate').value = today.toISOString().slice(0, 10)  //this grabs the first 10chars from the ISO string
 
-// initialises date array using today as reference
+
+//////// DATE ARRAY INITIALISATION 
+
+// create a new JS date object for now.
 let correcteddate = new Date(today)
+// set it to midnight. 
 correcteddate.setUTCHours(0, 0, 0, 0)
+// create an epoch of that date
 correcteddate = Date.parse(correcteddate)
+// create a variable representing a day in milliseconds.
 let millisecondsinaday = 86400000
 
-// creates populate the datearray
+// create and populate the datearray
 let datearray = []
 datearray.push(new Date(correcteddate))
 for (let i = 1; i < 14; i++) {
@@ -90,12 +102,15 @@ function setupcalendarheader() {
     calendarheader.className = "calendarrow"
     calendarheader.setAttribute('id', `maincalendarheader`)
 
+    // for each day in the datearray...
     for (let j = 0; j < datearray.length; j++) {
+        // create a column header
         let headerday = document.createElement('div')
         headerday.className = "calendaritem"
         headerday.innerHTML = `<p>${datearray[j].toDateString()}</p>`
         calendarheader.append(headerday)
     }
+    // append the column header to the calendarbody
     calendarbody.append(calendarheader)
 }
 
@@ -103,13 +118,18 @@ function setupcalendarheader() {
 
 function setupcalendarbody() {
 
+    // for each pitch...
     for (let i = 0; i < pitcharray.length; i++) {
+        
+        // create a calendar row...
         let pitch = document.createElement('div')
         pitch.className = "calendarrow"
         pitch.setAttribute('id', `pitchrow-${pitcharray[i]}`)
         pitch.dataset.pitch = pitcharray[i]
 
+        // for each date in the date array...
         for (let j = 0; j < datearray.length; j++) {
+            // create a day element within the calendar row.
             let day = document.createElement('div')
             day.className = "calendaritem"
             day.innerHTML = "<p></p>"
@@ -118,7 +138,7 @@ function setupcalendarbody() {
             day.setAttribute("onclick", "launchcreatenewbooking(this)")
             pitch.append(day)
         }
-
+        // append the pitch column to the calendar body.
         calendarbody.append(pitch)
     }
 }
@@ -127,13 +147,16 @@ function setupcalendarbody() {
 
 function fetchbookings() {
     
-    //fetch call to servebookings to get all bookings
+    // fetch call to servebookings to get a list of all bookings in the shown date range.
     fetch(`servebookings?start=${datearray[0].toISOString()}&end=${datearray[datearray.length - 1].toISOString()}`, {
         method: "GET"
     })
     .then(response => response.json())
     .then(data => {
         
+        // TODO - this process can be optimized by getting all pitch divs first and only once, 
+        // then checking the pitch list for the pitch div, then checking the pitch div for the calendar item.
+
         // for each booking...
         for (let i = 0; i < data.length; i++) {
             let bookingid = data[i].id
@@ -148,9 +171,12 @@ function fetchbookings() {
             let checkedin = data[i].checkedin
             let locked = data[i].locked
 
+            // for each calendar element in the target row.
             calendarcomponentarray.forEach(function(element) {
-                let elementdate = element.getAttribute("data-date")
-                if (parseInt(elementdate) >= bookingstart && parseInt(elementdate) < bookingend) {
+                let elementdate = parseInt(element.getAttribute("data-date"))
+                // if the elementdate is within the booking range
+                if (elementdate >= bookingstart && elementdate < bookingend) {
+                    // style the booking alerts into the calendar
                     if (balance !== 0.00) {
                         element.classList.add("balancedue")
                     }
@@ -161,13 +187,15 @@ function fetchbookings() {
                         element.classList.add("bookingnotcheckedin")
                     }
 
+                    // give the elements some data attributes that are used later. 
                     element.setAttribute("data-bookingid", bookingid)
 
                     element.setAttribute("data-originalcolor", element.style.backgroundColor)
                                         
                     element.setAttribute("onclick", `selectbooking(${data[i].id})`)
 
-                    if (parseInt(elementdate) == bookingstart) {
+                    // special logic for the first day of booking calendar render, e.g. booking surname and attribute graphic representation such as 'locked' padlock
+                    if (elementdate == bookingstart) {
                         if (locked) {
                             element.innerHTML = `<p><i class="fas fa-lock"></i> ${data[i].guest.surname}</p>`
                         } else {
@@ -190,6 +218,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     calendar.append(calendarbody)
     setupcalendarheader()
     setupcalendarbody()
+    //pre-loads one backward step 
     loadbackward()
     calendarinfinitescroll()
 
@@ -206,6 +235,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 ////////////////////////// SELECT BOOKING FUNCTIONALITY
+
+// variable initialization for select booking functionality.
 let selectedbooking = ""
 let selectstate = false
 const displaybutton = document.querySelector("#displaybutton")
@@ -285,6 +316,8 @@ function movebooking(bookingid) {
     message = document.createElement("div")
     message.innerHTML = '<p class="message">Booking move in progress.  Select new start location</p>'
     controlpanel.append(message)
+    // grab all the calendar day blocks and attach an event listener to each of them which will 
+    // receive a click and indicate the desire start date.
     bookingblocksoncalendar = document.querySelectorAll(".calendaritem")
     bookingblocksoncalendar.forEach((element) => {
         // commit the existing onclick attribute to a dataset entry
@@ -293,10 +326,13 @@ function movebooking(bookingid) {
         element.removeAttribute("onclick")
         // add a new onclick event listener
         element.addEventListener("click", () => {
+            // compile PATCH payload
             payload = {
+                // from the clicked element, grab its date and pitch.
                 newstart: element.dataset.date,
                 newpitch: element.dataset.pitch
             }
+            // submit the requested start date and pitch number to the server as PATCH
             fetch(`amendbooking/${bookingid}`, {
                 method: "PATCH",
                 headers: {
@@ -306,6 +342,7 @@ function movebooking(bookingid) {
                 body: JSON.stringify(payload)
             })
             .then((response) => {
+                // catch anything other than status 200 and error. 
                 if (!(response.status === 200)) {
                     return alert("Booking move unsuccessful.  Please reload the page and try again")
                 }
@@ -314,6 +351,7 @@ function movebooking(bookingid) {
                 }
             })    
             .then(data => {
+                // reload the page
                 document.location.reload()
             })
         })
@@ -322,9 +360,13 @@ function movebooking(bookingid) {
 
 ////////////////////////// LOAD BACKWARD DATES
 
+// this function loads earlier dates. Called by infinite scroll functionality.
 function loadbackward() {
+    // grabs the first date in the datearray
     firstDateRendered = datearray[0]
+    // sets it to midnight.
     firstDateRendered.setUTCHours(0, 0, 0, 0)
+    // initialises an array to store the forward dates and populates it.  
     let forwardDates = []
     for (i=-7; i<0; i++) {
         forwardDates.push(new Date(Date.parse(firstDateRendered)+(i*millisecondsinaday)))
@@ -388,10 +430,13 @@ function loadbackward() {
     
 }
 
-
+// this function loads later dates. Called by infinite scroll functionality.
 function loadforward() {
+    // grabs the last date in the datearray
     lastDateRendered = datearray[datearray.length - 1]
+    // sets it to midnight.
     lastDateRendered.setUTCHours(0, 0, 0, 0)
+    // initialises an array to store the forward dates and populates it.  
     let forwardDates = []
     for (i=1; i<8; i++) {
         forwardDates.push(new Date(Date.parse(lastDateRendered)+(i*millisecondsinaday)))
@@ -447,13 +492,16 @@ function loadforward() {
 
 /////////// INFINITE HORIZONTAL SCROLL OF CALENDAR
 
+// adds event listener to calendarbody to detect scroll to either edge of div.  
 function calendarinfinitescroll() {  
     const calendarbodydiv = document.querySelector('.calendarbody')
     const calendarbodydivwidth = calendarbodydiv.offsetWidth
     calendarbodydiv.addEventListener('scroll', () => {
+        // if right edge...
         if (calendarbodydiv.scrollLeft === (calendarbodydiv.scrollWidth - calendarbodydivwidth)) {
             loadforward()
         }
+        // if left edge...
         else if (calendarbodydiv.scrollLeft === 0) {
             loadbackward()
         }
@@ -476,6 +524,7 @@ function calendarinfinitescroll() {
 /////////////////////////// DISPLAYS BOOKING SUMMARY PANEL WHEN BOOKING IS CLICKED ON
 
 function displaybookingpane(bookingid) {
+    // build the booking pane wrapper and element.
     let bookingpanewrapper = document.createElement('div')
     bookingpanewrapper.className = "panewrapper"
     bookingpanewrapper.id = "bookingpanewrapper"
@@ -484,6 +533,7 @@ function displaybookingpane(bookingid) {
     bookingpane.id = 'bookingpane'
     bookingpane.className = "pane"
 
+    // fetch the booking details from the server.
     fetch(`booking/${bookingid}`, {
         method: 'GET'
     })
@@ -506,7 +556,7 @@ function displaybookingpane(bookingid) {
         let locked = data.locked
         let checkedin = data.checkedin
 
-        
+        // build the booking pane content.
         bookingpane.innerHTML = `
             <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
             <h3 id="bookingpanetitle">Booking ${bookingid}</h3>
@@ -542,40 +592,41 @@ function displaybookingpane(bookingid) {
                 </fieldset>
             </div>
             <div class="controlbuttons">
-                <button id="loadeditmenubutton" class="btn btn-secondary")>View/Edit Full Booking</button>    
+                <button id="loadeditmenubutton" class="btn btn-secondary")>Show Edit Menu</button>    
                 <button class="btn btn-secondary" onclick=loadpaymentdetail(${bookingid})>View Payments Detail</button>
                 <button id="loadcommentsbutton" class="btn btn-secondary">View Comments</button>
                 <button id="loadpartybutton" class="btn btn-secondary">View Party</button>
             </div>
             `
-        //build the display
+        // compile the display
         bookingpanewrapper.append(bookingpane)
         body.append(bookingpanewrapper)
 
-        //add event listener to load comments button and pass in the comments. 
+        // add event listener to load comments button and pass in the comments. 
         loadeditmenubutton = document.querySelector("#loadeditmenubutton")
         loadeditmenubutton.addEventListener("click", () => {
             loadeditmenu(data)
         })
 
-        //add event listener to load comments button and pass in the comments. 
+        // add event listener to load comments button and pass in the comments. 
         loadcommentsbutton = document.querySelector("#loadcommentsbutton")
         loadcommentsbutton.addEventListener("click", () => {
             loadcomments(comments)
         })
 
-        //add event listener to load party button and pass in the party details.         
+        // add event listener to load party button and pass in the party details.         
         loadpartybutton = document.querySelector("#loadpartybutton")
         loadpartybutton.addEventListener("click", () => {
             loadparty(bookingparty, bookingvehicles)
         })
         
-        //visual indication in booking pane that booking is checked in.
+        // visual indication in booking pane that booking is checked in.
         if (data.checkedin){
             document.querySelector("#bookingpanetitle").className = "checkedin"
             document.querySelector(".panepartydetail").classList.add("checkedin")
         }
 
+        // grab the comments div in the booking pane for update.
         importantbookingcommentsdiv = document.querySelector("#importantbookingcomments")
         // check whether any of the booking comments are flagged as important
         for (i=0; i<comments.length; i++) {
@@ -589,8 +640,9 @@ function displaybookingpane(bookingid) {
     })
 }
 
-
+// called when View Comments button pressed in booking pane. 
 function loadcomments(comments) {
+    // build the comments pane wrapper and element
     const commentspanewrapper = document.createElement("div");
     commentspanewrapper.className = "panewrapper";
     commentspanewrapper.id = "commentspanewrapper";
@@ -601,15 +653,17 @@ function loadcomments(comments) {
         <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(commentspanewrapper)></i></p>
         <h3>Booking Comments</h3>
         `
-
+    // compile it on screen
     body.append(commentspanewrapper);
     commentspanewrapper.append(commentspane);
 
+    // catch situations with no comments...
     if (comments.length === 0) {
         commentitem = document.createElement("div");
         commentitem.textContent = "There are no comments associated with this booking."
         commentspane.append(commentitem);
     }
+    // otherwise, populate with the booking comments. 
     else {
         for (i=0; i<comments.length; i++) {
             commentitem = document.createElement("div");
@@ -626,7 +680,9 @@ function loadcomments(comments) {
     }
 }
 
+// called when Load Party button pressed in booking pane.
 function loadparty(bookingparty, bookingvehicles) {
+    // build the party pane wrapper and element. 
     const partypanewrapper = document.createElement("div");
     partypanewrapper.className = "panewrapper";
     partypanewrapper.id = "partypanewrapper";
@@ -641,16 +697,20 @@ function loadparty(bookingparty, bookingvehicles) {
         <div id="partyvehicles"></div>
         `
 
+    //comile them on the screen
     body.append(partypanewrapper);
     partypanewrapper.append(partypane);
 
     const partydiv = document.querySelector("#partydetails")
 
+    // catch booking with no party members
     if (bookingparty.length === 0) {
         let partyitem = document.createElement("div");
         partyitem.textContent = "There are no party members associated with this booking."
         partydiv.append(partyitem);
     }
+
+    // populate the pane with party members. 
     else {
         for (i=0; i<bookingparty.length; i++) {
             let partyitem = document.createElement("div");
@@ -669,12 +729,15 @@ function loadparty(bookingparty, bookingvehicles) {
     }
 
     const vehiclesdiv = document.createElement("div")
-   
+    
+    // catch booking with no party vehicles
     if (bookingvehicles.length === 0) {
         partyitem = document.createElement("div");
         partyitem.textContent = "There are no party vehicles associated with this booking."
         vehiclesdiv.append(partyitem);
     }
+
+    // populate pane with party vehicles
     else {
         for (i=0; i<bookingparty.length; i++) {
             partyitem = document.createElement("div");
@@ -696,7 +759,10 @@ function loadparty(bookingparty, bookingvehicles) {
 
 }
 
+// called when Edit Booking button pressed in booking pane. 
 function loadeditmenu(bookingdata) {
+
+    // build the edit pane wrapper and element.
     const editpanewrapper = document.createElement("div");
     editpanewrapper.className = "panewrapper";
     editpanewrapper.id = "editpanewrapper";
@@ -717,11 +783,12 @@ function loadeditmenu(bookingdata) {
 
     body.append(editpanewrapper);
     editpanewrapper.append(editpane);
-
 }
 
+// called from the edit pane button click
 function editleadguest(bookingid, leadguest) {
     editactionpanel = document.querySelector("#editactionpanel")
+    //build a form allowing user to search for a new lead guest. 
     editactionpanel.innerHTML = `
         <h3>Search for New Lead Guest</h3>
         <input type="text" autofocus onKeyUp=guestsearch(this) id="guestsearch" class="form-control" placeholder="Email">
@@ -736,8 +803,10 @@ function editleadguest(bookingid, leadguest) {
 
 }
 
+// called from the edit pane button click
 function editpartynumbers(bookingid, adults, children, infants) {
     editactionpanel = document.querySelector("#editactionpanel")
+    // build a form allowing the user to adjust party numbers.
     editactionpanel.innerHTML = `
         <h3>Edit Party Numbers</h3>
         
@@ -757,18 +826,21 @@ function editpartynumbers(bookingid, adults, children, infants) {
     `
 }
 
+// called by clicking submit in the edit party numbers pane. 
 function updatePartyNumbers(bookingid) {
+    // grab the new values
     newadultno = document.querySelector("#newadultno").value
     newchildno = document.querySelector("#newchildno").value
     newinfantno = document.querySelector("#newinfantno").value
 
-    
+    // compile the payload
     payload = {
         "newadultno": newadultno,
         "newchildno": newchildno,
         "newinfantno": newinfantno
     }
     
+    // send PATCH to server. 
     fetch(`amendbooking/${bookingid}`, {
         method: "PATCH",
         headers: {
@@ -778,6 +850,7 @@ function updatePartyNumbers(bookingid) {
         body: JSON.stringify(payload)
     })
     .then((response) => {
+        // error check for unsuccessful status code. 
         if (!(response.status === 200)) {
             return alert("Party number update unsuccessful.  Please reload the page and try again")
         }
@@ -787,13 +860,29 @@ function updatePartyNumbers(bookingid) {
     })    
     .then(data => {
         alert("Party numbers updated")
+        // reload the booking pane which should show new party numbers. 
         closepane(bookingpanewrapper)
         displaybookingpane(bookingid)
     })
 }
 
 function editstayduration(bookingid, bookingstart, bookingend) {
-    console.log(bookingstart, bookingend)
+    // TODO
+    editactionpanel = document.querySelector("#editactionpanel")
+    let staydurationinmilliseconds = new Date(bookingend) - new Date(bookingstart)
+    let staydurationindays = staydurationinmilliseconds/millisecondsinaday
+    console.log(staydurationindays) 
+    // build a form allowing the user to adjust the stay duration.
+    editactionpanel.innerHTML = `
+        <h3>Edit Stay Duration</h3>
+        
+        <div class="form-floating mb-3">
+            <input id="stayduration" type="number" class="form-control" step=1 value="${staydurationindays}"></input>
+            <label for="adults">No of nights</label>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick=updateStayDuration(${bookingid})>Update Stay Duration</button>
+
+    `
 }
 
 function updateGuest(bookingid) {
@@ -825,6 +914,36 @@ function updateGuest(bookingid) {
         displaybookingpane(bookingid)
     })
 }
+
+function updateStayDuration(bookingid) {
+    requestedduration = document.querySelector("#stayduration").value
+    
+    payload = {
+        "newduration": parseInt(requestedduration)
+    }
+    
+    fetch(`amendbooking/${bookingid}`, {
+        method: "PATCH",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then((response) => {
+        if (!(response.status === 200)) {
+            return alert("Duration amendment unsuccessful.  Are those nights available on this pitch?")
+        }
+        else {
+            return response.json()
+        }
+    })    
+    .then(data => {
+        alert("Duration amendment successful.")
+        closepane(bookingpanewrapper)
+        displaybookingpane(bookingid)
+    })
+}   
 
 
 ///////////////////////// NEW BOOKING CREATION

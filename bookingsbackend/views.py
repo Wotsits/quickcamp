@@ -19,6 +19,7 @@ from dateutil import parser
 import json
 import matplotlib.pyplot as plt
 import numpy
+from . import helpers
 
 from .forms import *
 from .models import *
@@ -626,9 +627,30 @@ def apiamendbooking(request, pk):
             # TODO - need to recalulate here. This should be via a helper function as used elsewhere.
         
         #checks if it is a duration change
-        elif 'newdurantion' in payload:
-            # TODO - write logic for booking durantion change
-            print('new duration request detected')
+        elif 'newduration' in payload:
+            newduration = payload['newduration']
+            newrequestedend = booking.start + timedelta(newduration)
+            
+            # checks if there is already a booking which fouls this amendment
+            bookingsonpitch = Booking.objects.filter(pitch=booking.pitch)
+            bookingsstartinginrange = bookingsonpitch.filter(start__range=[booking.start, newrequestedend-timedelta(1)])
+            bookingsendinginrange = bookingsonpitch.filter(end__range=[booking.start+timedelta(1), newrequestedend])
+            bookingscrossingrange = bookingsonpitch.filter(start__range=["1901-01-01", booking.start], end__range=[newrequestedend, '2099-12-31'])
+            bookingsimpactingrange = bookingsstartinginrange | bookingsendinginrange | bookingscrossingrange
+            if len(bookingsimpactingrange) > 1:
+                print("triggered")
+                return HttpResponse(status=400)
+            
+            booking.end = newrequestedend
+
+            # recalculate the rates for the new dates
+            ratessum = helpers.recalculaterates(booking)
+            
+            booking.bookingrate = ratessum
+            booking.balance = booking.bookingrate - booking.totalpayments
+
+            booking.save()
+
 
         #else, this must be a date change.
         else: 
@@ -652,19 +674,12 @@ def apiamendbooking(request, pk):
             booking.end = requestedend
             booking.pitch = requestedpitch
             
-            # TODO - Work in progress - recalculate the rates for the new dates
-            relevantrates = Rate.objects.all()
-            ratesdict = {}
-            activedate = ""
-            for rate in relevantrates:
-                activedate = rate.start
-                while activedate < rate.end+timedelta(1):
-                    ratesdict[activedate]["adult"] = rate.adult
-                    ratesdict[activedate]["child"] = rate.child
-                    ratesdict[activedate]["infant"] = rate.infant
-                    activedate = activedate+timedelta(1)
-            print(ratesdict)
-                        
+            # recalculate the rates for the new dates
+            ratessum = helpers.recalculaterates(booking)
+            
+            booking.bookingrate = ratessum
+            booking.balance = booking.bookingrate - booking.totalpayments
+
             booking.save()
 
         # return booking.
