@@ -34,9 +34,25 @@
                                 {% for member in arrival.bookingparty.all %}
                                     
                                         {% if member.checkedin %}    
-                                            <p id="guest-{{member.id}}" class="checkedin">{{member.firstname}} {{member.surname}}</p>
+                                            <p id="guest-{{member.id}}" class="checkedin">
+                                                {% if member.type == "Adult"%}
+                                                    <i class="fas fa-male"></i>
+                                                {% elif member.type == "Child" %}
+                                                    <i class="fas fa-child"></i>
+                                                {% else %}
+                                                    <i class="fas fa-baby"></i>
+                                                {% endif %}
+                                                {{member.firstname}} {{member.surname}}</p>
                                         {% else %}
-                                            <p id="guest-{{member.id}}">{{member.firstname}} {{member.surname}}</p>
+                                            <p id="guest-{{member.id}}">
+                                                {% if member.type == "Adult"%}
+                                                    <i class="fas fa-male"></i>
+                                                {% elif member.type == "Child" %}
+                                                    <i class="fas fa-child"></i>
+                                                {% else %}
+                                                    <i class="fas fa-baby"></i>
+                                                {% endif %}
+                                                {{member.firstname}} {{member.surname}}</p>
                                         {% endif %}
                                     
                                 {% endfor %}
@@ -79,9 +95,25 @@
                             {% for member in arrival.bookingparty.all %}
                                 
                                     {% if member.checkedin %}    
-                                        <p id="guest-{{member.id}}" class="checkedin">{{member.firstname}} {{member.surname}}</p>
+                                        <p id="guest-{{member.id}}" class="checkedin">
+                                            {% if member.type == "Adult"%}
+                                                <i class="fas fa-male"></i>
+                                            {% elif member.type == "Child" %}
+                                                <i class="fas fa-child"></i>
+                                            {% else %}
+                                                <i class="fas fa-baby"></i>
+                                            {% endif %}
+                                            {{member.firstname}} {{member.surname}}</p>
                                     {% else %}
-                                        <p id="guest-{{member.id}}">{{member.firstname}} {{member.surname}}</p>
+                                        <p id="guest-{{member.id}}">
+                                            {% if member.type == "Adult"%}
+                                                <i class="fas fa-male"></i>
+                                            {% elif member.type == "Child" %}
+                                                <i class="fas fa-child"></i>
+                                            {% else %}
+                                                <i class="fas fa-baby"></i>
+                                            {% endif %}
+                                            {{member.firstname}} {{member.surname}}</p>
                                     {% endif %}
                                 
                             {% endfor %}

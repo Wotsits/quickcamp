@@ -23,6 +23,9 @@ class User(AbstractUser):
 
 class PitchType(models.Model):
     name = models.CharField(max_length=90)
+    description = models.TextField()
+    ehu = models.BooleanField()
+    mindimensions = models.CharField(max_length=30)
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     
     def __str__(self):
@@ -53,6 +56,8 @@ class Booking(models.Model):
     adultno = models.PositiveSmallIntegerField()
     childno = models.PositiveSmallIntegerField()
     infantno = models.PositiveSmallIntegerField()
+    vehicleno = models.PositiveSmallIntegerField()
+    petno = models.PositiveSmallIntegerField()
     bookingrate = models.FloatField()
     totalpayments = models.FloatField()
     balance = models.FloatField()
@@ -66,6 +71,8 @@ class Booking(models.Model):
 class PartyVehicle(models.Model):
     vehiclereg = models.CharField(max_length=7)
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="bookingvehicles")
+    start = models.DateField()
+    end = models.DateField()
     checkedin = models.BooleanField(default=False)
     noshow = models.BooleanField(default=False)
 
@@ -76,18 +83,40 @@ class PartyMember(models.Model):
     firstname = models.CharField(max_length=255, blank=True, null=True)
     surname = models.CharField(max_length=255, blank=True, null=True)
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="bookingparty")
+    start = models.DateField()
+    end = models.DateField()
+    type = models.CharField(max_length=20, choices={
+        ('Adult', 'Adult'),
+        ('Child', 'Child'),
+        ('Infant', 'Infant')
+    })
     checkedin = models.BooleanField(default=False)
     noshow = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.firstname} {self.surname} on Booking {self.booking.id}'
 
+class PartyPet(models.Model):
+    name = models.CharField(max_length=255, blank=True, null=True)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="bookingpets")
+    start = models.DateField()
+    end = models.DateField()
+    checkedin = models.BooleanField(default=False)
+    noshow = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'Pet {self.name} on Booking {self.booking.id}'
+
 class Rate(models.Model):
     start = models.DateField()
     end = models.DateField()
+    baseperbooking = models.FloatField()
+    basepernight = models.FloatField()
     adult = models.FloatField()
     child = models.FloatField()
     infant = models.FloatField()
+    pet = models.FloatField()
+    vehicle = models.FloatField()
 
     def __str__(self):
         return f'Rate {self.id} from {self.start} to {self.end}'

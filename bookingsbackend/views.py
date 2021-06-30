@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth import default_app_config, logout, login, authenticate
 from django.http import JsonResponse, HttpResponse
@@ -25,11 +25,11 @@ from .forms import *
 from .models import *
 from .serializers import *
 
-''' 
 
-#This function is used to update payments in the booking record as a batch process when my testing has made a mess of things. 
 
-def paymentsupdate(request):
+#This function is used in shell to update payments in the booking record as a batch process when my testing has made a mess of things. 
+
+def paymentsupdate():
     bookings = Booking.objects.all()
     payments = Payment.objects.all()
 
@@ -42,9 +42,29 @@ def paymentsupdate(request):
         booking.totalpayments = totalpaymentvalue
         booking.balance = balance
         booking.save()
-    return redirect(reverse('calendar'))
+    return 1
 
-'''
+
+#This function is used in shell to update party members and vehicles to match their host booking as a batch process when my testing has made a mess of things. 
+
+def partymembercorrection():
+    allbookings = Booking.objects.all()
+
+    for booking in allbookings: 
+        partymembers = PartyMember.objects.filter(booking=booking)
+        for partymember in partymembers:
+            partymember.start = booking.start
+            partymember.end = booking.end
+            partymember.save()
+        partvehicles = PartyVehicle.objects.filter(booking=booking)
+        for vehicle in partvehicles:
+            vehicle.start = booking.start
+            vehicle.end = booking.end
+            vehicle.save()
+    
+    return 1
+    
+
 
 ##################################################
 ############# LOG IN / LOG OUT VIEWS #############
@@ -235,6 +255,16 @@ class apiservepitchlist(ListAPIView):
         site = self.request.user.site
         return Pitch.objects.filter(site=site)
 
+# CBV serves pitch list
+# This view serves the pitches to render in the calendar view.
+# Customer get_queryset method filters pitch list by site. 
+class apiservepitchtypelist(ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        site = self.request.user.site
+        return PitchType.objects.filter(site=site)
+        
 # CBV serves bookings list
 # This view serves a list of bookings to render in the calendar view.  
 # Custom get_queryset method filters bookings to show those starting, ending or crossing the calendar date range.
@@ -256,7 +286,9 @@ class apiservebookingslist(ListAPIView):
 # CBV create view.  
 # Used for simple create actions.
 class apicreate(CreateAPIView):
-    pass
+    permission_classes = [permissions.IsAuthenticated]
+
+
 
 
 # CBV list view.
@@ -421,7 +453,8 @@ def apideletepayment(request, pk):
     booking.save()
 
     # return 200
-    return HttpResponse(status=200)
+    data = core_serializers.serialize('json', [payment, ])  
+    return HttpResponse(data, status=202, content_type='application/json')
    
 
 # FBV to serve rates to front end
@@ -464,6 +497,8 @@ def apicreatenewbooking(request):
         adultno = payload['adultno']
         childno = payload['childno']
         infantno = payload['infantno']
+        petno = payload['petno']
+        vehicleno = payload['vehicleno']
         bookingrate = float(payload['bookingrate'])
         bookingpaid = float(payload['bookingpaid'])
         balance = bookingrate - bookingpaid
@@ -490,16 +525,18 @@ def apicreatenewbooking(request):
     else: 
         # make new booking instance.
         newbooking = Booking(
-            pitch=pitch, 
-            guest=guest, 
-            start=arrival, 
-            end=departure, 
-            adultno=adultno, 
-            childno=childno, 
-            infantno=infantno,
-            bookingrate=bookingrate,
-            totalpayments=bookingpaid,
-            balance=balance
+            pitch           =pitch, 
+            guest           =guest, 
+            start           =arrival, 
+            end             =departure, 
+            adultno         =adultno, 
+            childno         =childno, 
+            infantno        =infantno,
+            petno           =petno,
+            vehicleno       =vehicleno,
+            bookingrate     =bookingrate,
+            totalpayments   =bookingpaid,
+            balance         =balance
             )
         newbooking.save()
 
@@ -513,15 +550,35 @@ def apicreatenewbooking(request):
 
         # count the total number of guests in the party.
         guestnumber = int(adultno) + int(childno) + int(infantno)
-        
+        partycomposition = ["Adult" for x in range(int(adultno))] + ["Child" for x in range(int(childno))] + ["Infant" for x in range(int(infantno))]
+
         # create a blank party member record for each member of the party to updated later. Names to be updated later by guest in public facing app.
         for i in range(guestnumber):
             partymember = PartyMember(
                 firstname="",
                 surname="",
-                booking=newbooking
+                booking=newbooking, 
+                start=newbooking.start,
+                end=newbooking.end,
+                type=partycomposition[i]
             )
             partymember.save()
+        for i in range(int(vehicleno)):
+            partyvehicle = PartyVehicle(
+                vehiclereg="",
+                booking=newbooking,
+                start=newbooking.start,
+                end=newbooking.end,
+            )
+            partyvehicle.save()
+        for i in range(int(petno)):
+            partypet = PartyPet(
+                name="",
+                booking=newbooking,
+                start=newbooking.start,
+                end=newbooking.end,
+            )
+            partypet.save()
 
     #return the booking.
     data = BookingSerializer(newbooking)
@@ -575,28 +632,200 @@ def apicreatenewpayment(request):
         date = payload['date']
         value = payload['value']
         method = payload['method']
+        booking = Booking.objects.get(pk=int(bookingid))
 
         # create new payment instance.
         payment = Payment(
             creationdate=date,
             value=value,
             method=method,
-            booking=Booking.objects.get(pk=int(bookingid))
+            booking=booking
         )
         payment.save()
+        
+        # recalculate helper function for booking instance here.
+        allbookingpayments = Payment.objects.filter(booking=booking)
+        paymentssum = 0
+        for payment in allbookingpayments:
+            paymentssum = paymentssum + payment.value
+        booking.totalpayments = paymentssum
+        # recalculate the rates based on new booking attributes
+        booking.bookingrate = helpers.recalculaterates(booking, booking.bookingparty, booking.bookingpets, booking.bookingvehicles)
+        booking.balance     = booking.bookingrate - booking.totalpayments
 
-        # TODO add recalculate helper function for booking instance here.
+        booking.save()
 
         # return the payment
         data = PaymentSerializer(payment)
         return HttpResponse(data, content_type='application/json')
 
 
-# FBV to amend a booking instance
-@login_required
-def apiamendbooking(request, pk):
+# FBV create comment view.  
+# Used to create new comment.
+def apicreatecomment(request):
+    payload = json.loads(request.body)
+    bookingid = payload['bookingid']
+    comment = payload['comment']
+    important = payload['important']
+    booking = get_object_or_404(Booking, pk=bookingid)
+    comment = Comment(
+        booking = booking,
+        comment = comment,
+        important = important
+    )
+    comment.save()
+    
+    data = core_serializers.serialize('json', [comment, ])  
+    return HttpResponse(data, status=202, content_type='application/json')
 
-    if request.method == "PATCH":
+
+# FBV delete party member view.  
+# Used to delete party member after reduction of party numbers.
+def apideletepartyitem(request):
+    payload = json.loads(request.body)
+    itemid = payload['itemid']
+    itemtype = payload['itemtype']
+
+    if itemtype == "member":
+        target = get_object_or_404(PartyMember, pk=itemid)
+    elif itemtype == "vehicle":
+        target = get_object_or_404(PartyVehicle, pk=itemid)
+    elif itemtype == "pet":
+        target = get_object_or_404(PartyPet, pk=itemid)
+
+    booking = target.booking
+    target.delete()
+
+    helpers.updatebooking("delete", target, booking)
+    
+    data = core_serializers.serialize('json', [booking, ])  
+    return HttpResponse(data, status=200, content_type='application/json')
+
+
+# FBV update party item view.
+# Used to update party members and vehicles.
+def apiupdatepartyitem(request):
+
+    # get the payload from the incoming AJAX PATCH request
+    payload = json.loads(request.body)
+    
+    # get the booking to which this request relates.  
+    booking = Booking.objects.get(id=payload['bookingid'])
+    
+    # get the item id and type which is being updated 
+    itemid = payload['itemid']
+    itemtype = payload['itemtype']
+    
+    # get the item attribute which is being updates and the new value for that attribute.
+    itemattribute = payload['itemattribute']
+    newvalue = payload['newvalue']
+
+    # get the item being updated
+    if itemtype == "member":
+        target = PartyMember.objects.get(id=itemid)
+    elif itemtype == "pet":
+        target = PartyPet.objects.get(id=itemid)
+    elif itemtype == "vehicle":
+        target = PartyVehicle.objects.get(id=itemid)
+    
+    # if the attribute being updated is a start or end date, we need to check that the change is possible.  
+    if itemattribute == "start" or itemattribute == "end":
+        newvalue = date.fromisoformat(newvalue)
+        setattr(target, itemattribute, newvalue)
+        amendmentpossible = helpers.checkamendmentpossible(target, booking)
+        if not amendmentpossible:
+            return HttpResponse(status=400)
+    
+    # otherwise, just update the attribute and...
+    else:
+        setattr(target, itemattribute, newvalue)
+
+    # save the new state of the target instance.
+    target.save()
+
+    # then update the host booking. 
+    helpers.updatebooking("amend", target, booking)
+    
+    data = core_serializers.serialize('json', [target, ])  
+    return HttpResponse(data, status=200, content_type='application/json')
+
+
+def apimovebooking(request, bookingid):
+    
+    # grab the target booking.
+    target = Booking.objects.get(id=bookingid)
+    
+    # unpack payload
+    payload = json.loads(request.body)
+    newstartdate = date.fromtimestamp(int(payload['newstart'])/1000) # converts the epoch to date object.
+    newpitch = int(payload['newpitch'])
+    
+    bookinglength = target.end - target.start
+    
+    # obtain all the partyitems
+    partymembers = PartyMember.objects.filter(booking=target)
+    partypets = PartyPet.objects.filter(booking=target)
+    partyvehicles = PartyVehicle.objects.filter(booking=target)
+    
+    # itialize variable to store date offsets
+    partymembersoffsetstoragedict = []
+    partypetsoffsetstoragedict = []
+    partyvehiclesoffsetstoragedict = []
+
+    # ascertain the existing offsets for each item.
+    for i in range(len(partymembers)):
+        storagedict = {
+            'offsetfromstart': partymembers[i].start - target.start,
+            'lengthofstay': partymembers[i].end - partymembers[i].start
+        }
+        partymembersoffsetstoragedict.append(storagedict) 
+    
+    for i in range(len(partypets)):
+        storagedict = {
+            'offsetfromstart': partypets[i].start - target.start,
+            'lengthofstay': partypets[i].end - partypets[i].start
+        }
+        partypetsoffsetstoragedict.append(storagedict)
+
+    for i in range(len(partyvehicles)):
+        storagedict = {
+            'offsetfromstart': partyvehicles[i].start - target.start,
+            'lengthofstay': partyvehicles[i].end - partyvehicles[i].start
+        }
+        partyvehiclesoffsetstoragedict.append(storagedict)
+    
+    # update the target booking with the new start date and pitch.
+    target.start = newstartdate
+    target.end = target.start + bookinglength    
+    target.pitch = Pitch.objects.get(id=newpitch)
+
+    # TODO need logic here to check the move is possible
+
+    for i in range(len(partymembers)):
+        partymembers[i].start = target.start + partymembersoffsetstoragedict[i]["offsetfromstart"]
+        partymembers[i].end = partymembers[i].start + partymembersoffsetstoragedict[i]["lengthofstay"]
+        partymembers[i].save()
+
+    for i in range(len(partypets)):
+        partypets[i].start = target.start + partypetsoffsetstoragedict[i]["offsetfromstart"]
+        partypets[i].end = partypets[i].start + partypetsoffsetstoragedict[i]["lengthofstay"]
+        partypets[i].save()
+
+    for i in range(len(partyvehicles)):
+        partyvehicles[i].start = target.start + partyvehiclesoffsetstoragedict[i]["offsetfromstart"]
+        partyvehicles[i].end = partyvehicles[i].start + partyvehiclesoffsetstoragedict[i]["lengthofstay"]
+        partyvehicles[i].save()
+
+    target.save()
+
+    helpers.updatebooking("delete", PartyMember(), target)
+
+    data = core_serializers.serialize('json', [target, ])  
+    return HttpResponse(data, status=200, content_type='application/json')
+
+
+'''
+ if request.method == "PATCH":
         # unpack payload
         payload = json.loads(request.body)
         # get the target booking instance
@@ -610,78 +839,4 @@ def apiamendbooking(request, pk):
             # update instance
             booking.guest = Guest.objects.get(pk=newguestid)
             booking.save()
-
-        #checks if it is a partynumber change
-        elif 'newadultno' in payload:
-            # unpack 
-            newadultno = payload['newadultno']
-            newchildno = payload['newchildno']
-            newinfantno = payload['newinfantno']
-
-            # update instance
-            booking.adultno = newadultno
-            booking.childno = newchildno
-            booking.infantno = newinfantno
-            booking.save()
-
-            # TODO - need to recalulate here. This should be via a helper function as used elsewhere.
-        
-        #checks if it is a duration change
-        elif 'newduration' in payload:
-            newduration = payload['newduration']
-            newrequestedend = booking.start + timedelta(newduration)
-            
-            # checks if there is already a booking which fouls this amendment
-            bookingsonpitch = Booking.objects.filter(pitch=booking.pitch)
-            bookingsstartinginrange = bookingsonpitch.filter(start__range=[booking.start, newrequestedend-timedelta(1)])
-            bookingsendinginrange = bookingsonpitch.filter(end__range=[booking.start+timedelta(1), newrequestedend])
-            bookingscrossingrange = bookingsonpitch.filter(start__range=["1901-01-01", booking.start], end__range=[newrequestedend, '2099-12-31'])
-            bookingsimpactingrange = bookingsstartinginrange | bookingsendinginrange | bookingscrossingrange
-            if len(bookingsimpactingrange) > 1:
-                print("triggered")
-                return HttpResponse(status=400)
-            
-            booking.end = newrequestedend
-
-            # recalculate the rates for the new dates
-            ratessum = helpers.recalculaterates(booking)
-            
-            booking.bookingrate = ratessum
-            booking.balance = booking.bookingrate - booking.totalpayments
-
-            booking.save()
-
-
-        #else, this must be a date change.
-        else: 
-            # unpack
-            requestedpitch = Pitch.objects.get(pk=payload['newpitch'])
-            requestedstart = datetime.fromtimestamp(int(payload['newstart']) / 1000).date()
-            bookinglength = booking.end - booking.start
-            requestedend = requestedstart + bookinglength
-            
-            # checks if there is already a booking which fouls this amendment
-            bookingsonpitch = Booking.objects.filter(pitch=requestedpitch)
-            bookingsstartinginrange = bookingsonpitch.filter(start__range=[requestedstart, requestedend-timedelta(1)])
-            bookingsendinginrange = bookingsonpitch.filter(end__range=[requestedstart+timedelta(1), requestedend])
-            bookingscrossingrange = bookingsonpitch.filter(start__range=["1901-01-01", requestedstart], end__range=[requestedend, '2099-12-31'])
-            bookingsimpactingrange = bookingsstartinginrange | bookingsendinginrange | bookingscrossingrange
-            if not len(bookingsimpactingrange) == 0:
-                return HttpResponse(status=400)
-
-            # update booking instance
-            booking.start = requestedstart
-            booking.end = requestedend
-            booking.pitch = requestedpitch
-            
-            # recalculate the rates for the new dates
-            ratessum = helpers.recalculaterates(booking)
-            
-            booking.bookingrate = ratessum
-            booking.balance = booking.bookingrate - booking.totalpayments
-
-            booking.save()
-
-        # return booking.
-        data = core_serializers.serialize('json', [booking, ])  
-        return HttpResponse(data, status=200, content_type='application/json')
+'''

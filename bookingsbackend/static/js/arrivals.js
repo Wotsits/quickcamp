@@ -93,7 +93,8 @@ function displaycheckinpane(bookingid) {
   .then(data => {
     // setup the checkin pane which includes a wrapper and the pane itself.
     checkinpanewrapper = document.createElement("div")
-    checkinpanewrapper.setAttribute("id", "bookingpanewrapper")
+    checkinpanewrapper.id = "bookingpanewrapper"
+    checkinpanewrapper.className = "panewrapper"
     body.append(checkinpanewrapper)
     checkinpane = document.createElement("div")
     checkinpane.id = "checkinpane"
@@ -133,7 +134,7 @@ function displaycheckinpane(bookingid) {
     //for each party member...
     for (i = 0; i < data.bookingparty.length; i++) {
       memberbutton = document.createElement("button")
-      memberbutton.innerHTML = `${data.bookingparty[i].firstname} ${data.bookingparty[i].surname}`
+      memberbutton.innerHTML = `${data.bookingparty[i].firstname} ${data.bookingparty[i].surname} - ${data.bookingparty[i].type}`
       memberbutton.type = "button"
       memberbutton.setAttribute("onClick", "checkin(this)")
       memberbutton.setAttribute("data-id", `${data.bookingparty[i].id}`)

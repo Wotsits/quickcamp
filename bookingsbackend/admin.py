@@ -16,5 +16,6 @@ admin.site.register(Site)
 admin.site.register(PaymentChange)
 admin.site.register(Extra)
 admin.site.register(PartyMember)
+admin.site.register(PartyPet)
 admin.site.register(PitchType)
 

@@ -2,11 +2,16 @@ from rest_framework import serializers
 
 from .models import *
 
+class PitchTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PitchType
+        fields = ['id', 'name', 'description', 'ehu', 'mindimensions']
 
 class PitchSerializer(serializers.ModelSerializer):
+    type = PitchTypeSerializer(many=False, read_only=True)
     class Meta:
         model = Pitch
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'type']
 
 class GuestSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,31 +23,37 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = ['id', 'creationdate', 'lasteditdate', 'value', 'method', 'booking']
 
-class CommentsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = ['important', 'comment']
-
 class PartyMemberSerializer(serializers.ModelSerializer):
     class Meta: 
         model = PartyMember
-        fields = ['id', 'firstname', 'surname', 'checkedin', 'noshow']
+        fields = ['id', 'firstname', 'surname', 'start', 'end', 'type', 'checkedin', 'noshow']
 
 class PartyVehicleSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartyVehicle
-        fields = ['id', 'vehiclereg', 'checkedin']
+        fields = ['id', 'vehiclereg', 'checkedin', 'start', 'end']
+
+class PartyPetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PartyPet
+        fields = ['id', 'name', 'checkedin', 'start', 'end']
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['booking', 'important', 'comment']
 
 class BookingSerializer(serializers.ModelSerializer):
     guest = GuestSerializer(many=False, read_only=True)
     paymentsbybooking = PaymentSerializer(many=True, read_only=True)
-    commentsbybooking = CommentsSerializer(many=True, read_only=True)
+    commentsbybooking = CommentSerializer(many=True, read_only=True)
     bookingparty = PartyMemberSerializer(many=True, read_only=True)
     bookingvehicles = PartyVehicleSerializer(many=True, read_only=True)
+    bookingpets = PartyPetSerializer(many=True, read_only=True)
 
     class Meta:
         model = Booking
-        fields = ['id', 'pitch', 'guest', 'start', 'end', 'adultno', 'childno', 'infantno', 'bookingrate', 'totalpayments', 'balance', 'paymentsbybooking', 'commentsbybooking', 'checkedin', 'locked', 'bookingparty', 'bookingvehicles'] 
+        fields = ['id', 'pitch', 'guest', 'start', 'end', 'adultno', 'childno', 'infantno', 'petno', 'vehicleno', 'bookingrate', 'totalpayments', 'balance', 'paymentsbybooking', 'commentsbybooking', 'checkedin', 'locked', 'bookingparty', 'bookingvehicles', 'bookingpets'] 
 
 class RateSerializer(serializers.ModelSerializer):
     class Meta:

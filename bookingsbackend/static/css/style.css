@@ -167,6 +167,10 @@ h3 {
     overflow-y: scroll;
 }
 
+.messagediv {
+    margin-bottom: 20px;
+}
+
 .basicbookinginfo {
     display: flex;
     justify-content: space-between;
@@ -220,7 +224,10 @@ form input {
     background-color: darkslategray;
     padding: 20px; 
     border-top: 2px solid white;
+}
 
+#editactionpanel { 
+    margin-top: 30px
 }
 
 .hidden {

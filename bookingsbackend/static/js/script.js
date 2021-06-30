@@ -9,3 +9,36 @@ csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value
 function closepane(elementname) {
     elementname.remove()
 }
+
+function closepaneandreloadbookingpane(bookingid) {
+    
+    //this function is used by multiple panes so they wont all exist on the page. 
+    try {
+        document.querySelector('#partypanewrapper').remove()
+    }
+    catch {}
+    
+    try {
+        document.querySelector('#paymentdetailswrapper').remove()
+    }
+    catch {}
+    
+    document.querySelector('#bookingpanewrapper').remove()
+    displaybookingpane(bookingid)
+}
+
+function startloadspinner() {
+    console.log("triggered")
+    loadspinnerwrapper = document.createElement("div")
+    loadspinnerwrapper.className = "panewrapper"
+    loadspinnerwrapper.id = "loadspinnerwrapper"
+
+    loadspinner = document.createElement("div")
+    loadspinner.innerHTML = '<div class="lds-ring"><div></div><div></div><div></div><div></div></div>'
+    body.append(loadspinnerwrapper)
+    loadspinnerwrapper.append(loadspinner)
+}
+
+function endloadspinner() {
+    document.querySelector("#loadspinnerwrapper").remove()
+}
