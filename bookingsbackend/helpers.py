@@ -4,7 +4,8 @@ from datetime import timedelta, date
 
 def recalculaterates(booking, partymembers, partypets, partyvehicles):
 
-    allrates = Rate.objects.all()
+    ratetype = booking.bookingratetype
+    allrates = Rate.objects.filter(ratetype=ratetype)
     ratesdict = {}
     targetdate = booking.start
     while targetdate < booking.end:
@@ -67,6 +68,8 @@ def updatebooking(event, target, booking):
     partymembers    = PartyMember.objects.filter(booking=booking)
     partyvehicles   = PartyVehicle.objects.filter(booking=booking)
     partypets       = PartyPet.objects.filter(booking=booking)
+
+    # the 'add' event requires no date adjustments so is not subject of a conditional here. 
 
     if event == "amend": 
         # if amendment extends booking, set the booking start/end to match the target start/end

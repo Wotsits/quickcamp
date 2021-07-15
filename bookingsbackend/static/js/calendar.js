@@ -2,6 +2,33 @@
 JS for calendar.html
 */
 
+//////////////////////// HELPER FUNCTION
+
+function rfc3339(d) {
+    
+    function pad(n) {
+        return n < 10 ? "0" + n : n;
+    }
+
+    function timezoneOffset(offset) {
+        var sign;
+        if (offset === 0) {
+            return "Z";
+        }
+        sign = (offset > 0) ? "-" : "+";
+        offset = Math.abs(offset);
+        return sign + pad(Math.floor(offset / 60)) + ":" + pad(offset % 60);
+    }
+
+    return d.getFullYear() + "-" +
+        pad(d.getMonth() + 1) + "-" +
+        pad(d.getDate()) + "T" +
+        pad(d.getHours()) + ":" +
+        pad(d.getMinutes()) + ":" +
+        pad(d.getSeconds()) + 
+        timezoneOffset(d.getTimezoneOffset());
+}
+
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
 /////// WHAT IS TODAY IN THE EYES OF THE CALENDAR
@@ -18,8 +45,10 @@ if (urlParams.get("startdate")) {
 }
 
 // set the date input to the value of startdate variable.
-document.querySelector('#startdate').value = today.toISOString().slice(0, 10)  //this grabs the first 10chars from the ISO string
+document.querySelector('#startdate').value = rfc3339(today).slice(0, 10)  //this grabs the first 10chars from the ISO string
 
+// set default for activerate variable in createnewbooking form
+let activerate = 1
 
 
 //////// DATE ARRAY INITIALISATION 
@@ -45,8 +74,38 @@ let pitcharray = []
 
 // initializes consts for calendar div and calendar body, used later.
 const calendar = document.querySelector('#calendar')
-const calendarbody = document.createElement('div')
-calendarbody.className = "calendarbody"
+
+const calendarleft = document.createElement('div')
+calendarleft.className = "calendarleft"
+calendarleft.id = "calendarleft"
+
+const calendarright = document.createElement('div')
+calendarright.className = "calendarright"
+calendarright.id = "calendarright"
+
+const calendarheaderleft = document.createElement('div')
+calendarheaderleft.className = "calendarheaderleft"
+calendarheaderleft.id = "calendarheaderleft"
+
+const calendarheaderright = document.createElement('div')
+calendarheaderright.className = "calendarheaderright calendarrow"
+calendarheaderright.id = "calendarheaderright"
+
+const calendarbodyleft = document.createElement('div')
+calendarbodyleft.className = "calendarbodyleft"
+calendarbodyleft.id = "calendarbodyleft"
+
+const calendarbodyright = document.createElement('div')
+calendarbodyright.className = "calendarbodyright"
+calendarbodyright.id = "calendarbodyright"
+
+calendar.append(calendarleft)
+calendar.append(calendarright)
+calendarleft.append(calendarheaderleft)
+calendarright.append(calendarheaderright)
+calendarleft.append(calendarbodyleft)
+calendarright.append(calendarbodyright)
+
 
 /* -------------------------------------------------------------- */
 /* -------------------------------------------------------------- */
@@ -56,6 +115,11 @@ calendarbody.className = "calendarbody"
 
 ////////////////////////// CALLED FIRST, SETS UP LEFT HAND COLUMN OF CALENDAR
 
+// creates a date div at the top of the pitchtitlecolumn
+let pitchtitlecolumnheader = document.createElement('div')
+pitchtitlecolumnheader.className = "pitchtitle pitchtitleheader calendaritem"
+calendarheaderleft.append(pitchtitlecolumnheader)
+
 // get list of pitch types from server
 async function fetchpitchtypes() {
     let response = await fetch("servepitchtypes", {
@@ -64,7 +128,6 @@ async function fetchpitchtypes() {
     let pitchtypes = await response.json()
     return pitchtypes
 }
-
 
 // get list of pitches from server
 async function fetchpitches() {
@@ -79,85 +142,127 @@ async function setupcalendarrowtitles() {
     let pitchtypes = await fetchpitchtypes()
     let pitches = await fetchpitches()
 
-    console.log(pitchtypes)
-    
-    // add pitch name to pitcharray[]
+    // add the pitches to the pitcharray[]
     for (let i = 0; i < pitches.length; i++) {
-        pitcharray.push(pitches[i].name)
+        let pitch = {
+            "name": pitches[i].name,
+            "type": pitches[i].type.id
+        }
+        pitcharray.push(pitch)
     }
 
-    // create div pitchcolumn
-    let pitchtitlecolumn = document.createElement('div')
-    pitchtitlecolumn.className = "calendarcolumn"
-    pitchtitlecolumn.setAttribute("id", "calendarrowtitles")
     
-    // creates a date div at the top of the pitchtitlecolumn
-    let pitchtitlecolumnheader = document.createElement('div')
-    pitchtitlecolumnheader.className = "pitchtitle pitchtitleheader calendaritem"
-    pitchtitlecolumn.append(pitchtitlecolumnheader)
 
+    // add a div of rows to left & right of calendar for each pitchtype
+    for (let i = 0; i < pitchtypes.length; i++) {
+        let pitchtyperowheaderdiv = document.createElement("div")
+        pitchtyperowheaderdiv.className = "pitchtyperowheaderdiv"
+        pitchtyperowheaderdiv.id = `pitchtyperowheader-${pitchtypes[i].id}`
+        pitchtyperowheaderdiv.innerHTML = `<p data-id="${pitchtypes[i].id}" class="pitchtyperowheadertitle">${pitchtypes[i].name}</p>`
+        calendarbodyleft.append(pitchtyperowheaderdiv)
+
+        // create a div to hold the pitches independent of the pitch type title.
+        let pitchrowtitleholder = document.createElement("div")
+        pitchrowtitleholder.className = "pitchrowtitleholder"
+        pitchrowtitleholder.id = `pitchrowtitleholder-${pitchtypes[i].id}`
+        pitchrowtitleholder.dataset.id = pitchtypes[i].id
+        pitchtyperowheaderdiv.append(pitchrowtitleholder)
+
+        let pitchrowholder = document.createElement("div")
+        pitchrowholder.className = "pitchrowholder"
+        pitchrowholder.id = `pitchrowholder-${pitchtypes[i].id}`
+        pitchrowholder.dataset.id = pitchtypes[i].id
+        pitchrowholder.innerHTML = `<p data-id="${pitchtypes[i].id}" class="pitchdivspacer"></p>`
+        calendarbodyright.append(pitchrowholder)
+    }
     
-    
-    // then adds a row header for each date in the pitcharray
+    // grab the pitchtypedivs
+    let pitchholders = document.querySelectorAll('.pitchrowtitleholder')
+
+    // then adds a row header for each pitch in the pitcharray
     for (let i = 0; i < pitcharray.length; i++) {
         let pitchtitle = document.createElement("div")
         pitchtitle.className = "pitchtitle calendaritem"
-        pitchtitle.innerHTML = `Pitch ${pitcharray[i]}`
-        pitchtitlecolumn.append(pitchtitle)
+        pitchtitle.innerHTML = `Pitch ${pitcharray[i].name}`
+
+        //find the target div
+        targetdiv = null 
+        while (targetdiv === null) {  //whilst we've not already got the target div
+            pitchholders.forEach((element) => { //check each pitchtypediv
+                if (parseInt(element.dataset.id) === pitcharray[i].type) { ///for a match with the pitch.type
+                    targetdiv = element //if a match is found set the targetdiv to that element which stops the loop
+                }
+            
+            })
+        }
+
+        targetdiv.append(pitchtitle)
+        //reset the target div to null
+        targetdiv = null
     }
 
-    // adds the pitchtitlecolumn to the calendar div
-    calendar.append(pitchtitlecolumn)
+    
     
 }
 
 /////////////////////////// CALLED SECOND, SETS UP COLUMN HEADER ROW OF CALENDAR
 
 function setupcalendarheader() {
-    let calendarheader = document.createElement('div')
-    calendarheader.className = "calendarrow"
-    calendarheader.setAttribute('id', `maincalendarheader`)
-
+    
     // for each day in the datearray...
     for (let j = 0; j < datearray.length; j++) {
         // create a column header
         let headerday = document.createElement('div')
         headerday.className = "calendaritem"
         headerday.innerHTML = `<p>${datearray[j].toDateString()}</p>`
-        calendarheader.append(headerday)
+        calendarheaderright.append(headerday)
     }
-    // append the column header to the calendarbody
-    calendarbody.append(calendarheader)
 }
 
 ////////////////////// CALLED THIRD, SETS UP CALENDAR BODY
 
 function setupcalendarbody() {
 
-    // for each pitch...
-    for (let i = 0; i < pitcharray.length; i++) {
-        
-        // create a calendar row...
-        let pitch = document.createElement('div')
-        pitch.className = "calendarrow"
-        pitch.setAttribute('id', `pitchrow-${pitcharray[i]}`)
-        pitch.dataset.pitch = pitcharray[i]
+    // grab the pitchtypedivs
+    let pitchholders = document.querySelectorAll('.pitchrowholder')
 
-        // for each date in the date array...
+    // for each pitch in the pitch array, create the pitch row element...
+    for (let i = 0; i < pitcharray.length; i++) {
+        let pitch = document.createElement("div")
+        pitch.className = "calendarrow"
+        pitch.id = `pitchrow-${pitcharray[i].name}`
+        pitch.dataset.pitch = pitcharray[i].name
+
+        // then populate that element with date elements for each date in the date array...
         for (let j = 0; j < datearray.length; j++) {
-            // create a day element within the calendar row.
             let day = document.createElement('div')
-            day.className = "calendaritem"
+            day.className = "calendaritem calendarbodyitem"
             day.innerHTML = "<p></p>"
-            day.setAttribute("data-pitch", pitcharray[i])
+            day.setAttribute("data-pitch", pitcharray[i].name)
             day.setAttribute("data-date", Date.parse(datearray[j]))
             day.setAttribute("onclick", "launchcreatenewbooking(this)")
             pitch.append(day)
         }
-        // append the pitch column to the calendar body.
-        calendarbody.append(pitch)
+
+        //find the target div
+        targetdiv = null 
+        while (targetdiv === null) {  //whilst we've not already got the target div
+            pitchholders.forEach((element) => { //check each pitchtypediv
+                if (parseInt(element.dataset.id) === pitcharray[i].type) { ///for a match with the pitch.type
+                    targetdiv = element //if a match is found set the targetdiv to that element which stops the loop
+                }
+            })
+        }
+
+        targetdiv.append(pitch)
+        //reset the target div to null
+        targetdiv = null
     }
 }
+
+
+
+
 
 //////////////////////// CALLED LAST, FETCHES BOOKINGS AND POPULATES CALENDAR WITH THOSE BOOKINGS
 
@@ -231,12 +336,12 @@ function fetchbookings() {
 document.addEventListener("DOMContentLoaded", async () => {
     
     await setupcalendarrowtitles()
-    calendar.append(calendarbody)
     setupcalendarheader()
     setupcalendarbody()
     //pre-loads one backward step 
     loadbackward()
     calendarinfinitescroll()
+    
 
 })
 
@@ -392,7 +497,7 @@ function loadbackward() {
     let calendarheader = document.querySelector('#maincalendarheader')
 
     //grab the width of the calandar header row before addition to facilitate the reset of the scroll position later in this script
-    const calendarbody = document.querySelector(".calendarbody")
+    const calendarbody = document.querySelector(".calendarright")
     const originalbodywidth = calendarbody.scrollWidth
     //grab the current scroll position before addition for later scroll position reset calculation.
     const originalscrollposition = calendarbody.scrollLeft
@@ -406,7 +511,7 @@ function loadbackward() {
         
         //render the additions to each calendar row
         //if header row...
-        if (element.getAttribute("id") == "maincalendarheader") {
+        if (element.getAttribute("id") == "calendarheaderright") {
             //create the divs and populate with the date string
             for (j=6; j>=0; j--) {
                 let calendaritem = document.createElement('div')
@@ -469,7 +574,7 @@ function loadforward() {
         
         //render the additions to each calendar row
         //if header row...
-        if (element.getAttribute("id") == "maincalendarheader") {
+        if (element.getAttribute("id") == "calendarheaderright") {
             //create the divs and populate with the date string
             for (j=0; j<7; j++) {
                 let calendaritem = document.createElement('div')
@@ -510,7 +615,7 @@ function loadforward() {
 
 // adds event listener to calendarbody to detect scroll to either edge of div.  
 function calendarinfinitescroll() {  
-    const calendarbodydiv = document.querySelector('.calendarbody')
+    const calendarbodydiv = document.querySelector('.calendarright')
     const calendarbodydivwidth = calendarbodydiv.offsetWidth
     calendarbodydiv.addEventListener('scroll', () => {
         // if right edge...
@@ -650,7 +755,7 @@ function displaybookingpane(bookingid) {
         // add event listener to load party button and pass in the party details.         
         loadpartybutton = document.querySelector("#loadpartybutton")
         loadpartybutton.addEventListener("click", () => {
-            loadparty(bookingparty, bookingpets, bookingvehicles, bookingid)
+            loadparty(arrival, departure, bookingparty, bookingpets, bookingvehicles, bookingid)
         })
         
         // visual indication in booking pane that booking is checked in.
@@ -778,7 +883,7 @@ function createnewcomment(bookingid) {
 }
 
 // called when Load Party button pressed in booking pane.
-function loadparty(bookingparty, bookingpets, bookingvehicles, bookingid) {
+function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingvehicles, bookingid) {
     // build the party pane wrapper and element. 
     const partypanewrapper = document.createElement("div")
     partypanewrapper.className = "panewrapper"
@@ -792,7 +897,7 @@ function loadparty(bookingparty, bookingpets, bookingvehicles, bookingid) {
         <h3>Party Details</h3>
         <div id="messagediv"></div>
         <div id="partydetails">
-            <h4>People <i onclick=addpartymember(${bookingid}) class="fas fa-plus-circle"></i></h4>
+            <h4>People <i onclick="addpartyitem(this, ${bookingid})" data-type="member" class="fas fa-plus-circle"></i></h4>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -809,7 +914,7 @@ function loadparty(bookingparty, bookingpets, bookingvehicles, bookingid) {
             </div>
         </div>
         <div id="partypets">
-            <h4>Pets <i onclick=addpartypet(${bookingid}) class="fas fa-plus-circle"></i></h4>
+            <h4>Pets <i onclick="addpartyitem(this, ${bookingid})" data-type="pet" class="fas fa-plus-circle"></i></h4>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -824,7 +929,7 @@ function loadparty(bookingparty, bookingpets, bookingvehicles, bookingid) {
             </div>
         </div>
         <div id="partyvehicles">
-            <h4>Vehicles <i onclick=addpartyvehicle(${bookingid}) class="fas fa-plus-circle"></i></h4>
+            <h4>Vehicles <i onclick="addpartyitem(this, ${bookingid})" data-type="vehicle" class="fas fa-plus-circle"></i></h4>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -976,6 +1081,107 @@ function loadparty(bookingparty, bookingpets, bookingvehicles, bookingid) {
 }
 
 
+
+
+function addpartyitem(element, bookingid) {
+    
+    startloadspinner()
+    
+    itemtypetobeadded = element.dataset.type
+
+    payload = {
+        "bookingid"       : bookingid,
+        "itemtype"        : itemtypetobeadded,
+    }
+    
+    fetch("addpartyitem", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+
+    .then((response) => {
+        // error check for unsuccessful status code. 
+        if (!(response.status === 202)) {
+            alert("Party item addition unsuccessful.  Please reload the page and try again")
+            return response.json()
+        }
+        else {
+            return response.json()
+        }
+    })
+
+    .then(data => {
+        
+        bookingstart = data[0].fields.start
+        bookingend = data[0].fields.end
+
+        let newrow = document.querySelector("tr")
+        let targetdiv = ""
+        if (itemtypetobeadded === "member") {
+            targetdiv = document.querySelector("#partydetailstablebody")
+            newrow.innerHTML = `
+                <td><input data-id="${data[0].pk}" data-type="member" data-attribute="firstname" type="text" class="form-control"/>
+                <td><input data-id="${data[0].pk}" data-type="member" data-attribute="surname" type="text" class="form-control"/></td>
+                <td><input data-id="${data[0].pk}" data-type="member" data-attribute="start" type="date" class="form-control" value="${bookingstart}"/></td>
+                <td><input data-id="${data[0].pk}" data-type="member" data-attribute="end" type="date" class="form-control" value="${bookingend}"/></td>
+                <td>
+                    <select id="typeselect" data-id="${data[0].pk}" data-type="member" data-attribute="type" type="text" class="form-control">
+                        <option>Adult</option>
+                        <option>Child</option>
+                        <option>Infant</option>
+                    </select>
+                </td>
+                <td><i data-id="${data[0].pk}" data-type="member" class="fas fa-trash-alt deleteitem"></i></td>
+                `
+        }
+        else if (itemtypetobeadded === "pet") {
+            targetdiv = document.querySelector("#partypetsdetailstablebody")
+            newrow.innerHTML = `
+                <td><input data-id="${data[0].pk}" data-type="pet" data-attribute="name" type="text" class="form-control"/></td>
+                <td><input data-id="${data[0].pk}" data-type="pet" data-attribute="start" type="date" class="form-control" value="${bookingstart}"/></td>
+                <td><input data-id="${data[0].pk}" data-type="pet" data-attribute="end" type="date" class="form-control" value="${bookingend}"/></td>
+                <td><i data-id="${data[0].pk}" data-type="pet" class="fas fa-trash-alt deleteitem"></i></td>
+        
+                `
+        }
+        else {
+            targetdiv = document.querySelector("#partyvehiclesdetailstablebody")
+            newrow.innerHTML = `
+                <td><input data-id="${data[0].pk}" data-type="vehicle" data-attribute="vehiclereg" type="text" class="form-control"/></td>
+                <td><input data-id="${data[0].pk}" data-type="vehicle" data-attribute="start" type="date" class="form-control" value="${bookingstart}"/></td>
+                <td><input data-id="${data[0].pk}" data-type="vehicle" data-attribute="end" type="date" class="form-control" value="${bookingend}"/></td>
+                <td><i data-id="${data[0].pk}" data-type="vehicle" class="fas fa-trash-alt deleteitem"></i></td>
+                `
+        }
+        targetdiv.append(newrow)
+        
+        //add update party item event listener to each input field in the party pane.  
+        newrow.querySelectorAll("input").forEach(element => {
+            element.addEventListener("change", () => {
+                updatepartyitem(element, bookingid)
+            })
+        })
+        newrow.querySelectorAll("select").forEach(element => {
+            element.addEventListener("change", () => {
+                updatepartyitem(element, bookingid)
+            })
+        })
+
+        //add delete party item event listener to each input field in the party pane.       
+        newrow.querySelectorAll(".deleteitem").forEach(element => {
+            element.addEventListener("click", () => {
+                deletepartyitem(element)
+            })
+        })
+        endloadspinner()
+    })
+}   
+
+
 // called when focus is removed from a input field in the party detail pane.  
 function updatepartyitem(element, bookingid) {
     
@@ -1014,7 +1220,8 @@ function updatepartyitem(element, bookingid) {
 }
 
 function deletepartyitem(element) {
-    console.log("triggered")
+
+    startloadspinner()
 
     itemid = element.dataset.id
     itemtype = element.dataset.type
@@ -1045,7 +1252,6 @@ function deletepartyitem(element) {
     })
     .then(data => {
         endloadspinner()
-        console.log(data)
     })
     }
 
@@ -1079,71 +1285,6 @@ function loadeditmenu(bookingdata) {
 
 
 
-// called by clicking submit in the edit party numbers pane. 
-function updatePartyNumbers(bookingdata) {
-    // grab the new values
-    newadultno = document.querySelector("#newadultno").value
-    newchildno = document.querySelector("#newchildno").value
-    newinfantno = document.querySelector("#newinfantno").value
-
-    partyreduction = false
-
-    // compile the payload
-    payload = {
-        "newadultno": newadultno,
-        "newchildno": newchildno,
-        "newinfantno": newinfantno
-    }
-    
-    // send PATCH to server. 
-    fetch(`amendbooking/${bookingdata.id}`, {
-        method: "PATCH",
-        headers: {
-            "X-CSRFToken": csrftoken,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    })
-    .then((response) => {
-        // status 209 indicates that there has been a reduction in party numbers        
-        if (response.status === 209) {
-            partyreduction = true
-            alert("party reduction detected")
-            return response.json()
-        }
-        // error check for unsuccessful status code. 
-        else if (!(response.status === 200)) {
-            return alert("Party number update unsuccessful.  Please reload the page and try again")
-        }
-        else {
-            return response.json()
-        }
-    })    
-    .then(data => {
-        alert("Party numbers updated")
-        if (partyreduction === true) {
-            loadparty(bookingdata.bookingparty,bookingdata.bookingvehicles)
-            const partypanemessagediv = document.querySelector("#messagediv")
-            partypanemessagediv.innerHTML = "<p>You have removed guests from this booking.  Please remove those guests from the Party Details and then close this dialogue box.</p>"
-            document.querySelectorAll(".partymember").forEach((element) => {
-                let deletionicon = document.createElement("span")
-                deletionicon.innerHTML = `<i class="fas fa-times clickable"></i>`
-                element.prepend(deletionicon)
-                deletionicon.addEventListener("click", () => {
-                    console.log(element)
-                    deletepartymember(element)
-                })
-            })
-            
-        }
-        else {
-            // reload the booking pane which should show new party numbers. 
-            closepane(bookingpanewrapper)
-            displaybookingpane(bookingid)
-        }
-    })
-}
-
 function deletepartymember(element) {
     console.log(element)
     payload = {
@@ -1171,21 +1312,6 @@ function deletepartymember(element) {
     })
 }
 
-function editstayduration(bookingid, bookingstart, bookingend) {
-    editactionpanel = document.querySelector("#editactionpanel")
-    let staydurationinmilliseconds = new Date(bookingend) - new Date(bookingstart)
-    let staydurationindays = staydurationinmilliseconds/millisecondsinaday
-    console.log(staydurationindays) 
-    // build a form allowing the user to adjust the stay duration.
-    editactionpanel.innerHTML = `
-        <div class="form-floating mb-3">
-            <input id="stayduration" type="number" class="form-control" step=1 value="${staydurationindays}"></input>
-            <label for="adults">No of nights</label>
-        </div>
-        <button type="button" class="btn btn-secondary" onclick=updateStayDuration(${bookingid})>Update Stay Duration</button>
-
-    `
-}
 
 function updateGuest(bookingid) {
     guestid = document.querySelector("#guestid").textContent
@@ -1270,10 +1396,13 @@ function launchcreatenewbooking(element) {
     bookingpane.id = 'bookingpane'
     bookingpane.className = "pane"
 
+
     bookingpane.innerHTML = `
         <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
         <h3>New Booking</h3>
         <hr>
+        <div id="rateselectdiv" class="btn-group" role="group" aria-label="Select rate group"></div>
+        
         <form autocomplete="off">
             <h5>Lead Guest</h5>
             <div id='guestsearch' class="form-floating mb-3">
@@ -1286,6 +1415,45 @@ function launchcreatenewbooking(element) {
             </div>
             
             <hr>
+
+            <h5>Unit</h5>
+            <div id="unitselect" class="optionselect">
+                
+                <input type="radio" class="btn-check" name="unit-select" id="van" autocomplete="off" value="van" onchange=resetavailablepitches(${preferredpitch})>
+                <label class="btn btn-outline-success unitselectbutton" for="van"><i class="fas fa-shuttle-van large"></i></label>
+
+                <input type="radio" class="btn-check" name="unit-select" id="caravan" autocomplete="off" value="caravan" onchange=resetavailablepitches(${preferredpitch})>
+                <label class="btn btn-outline-success unitselectbutton" for="caravan"><i class="fas fa-caravan large"></i></label>
+
+                <input type="radio" class="btn-check" name="unit-select" id="trailertent" autocomplete="off" value="trailertent" onchange=resetavailablepitches(${preferredpitch})>
+                <label class="btn btn-outline-success unitselectbutton" for="trailertent"><i class="fas fa-trailer large"></i></label>
+
+                <input type="radio" class="btn-check" name="unit-select" id="tent" autocomplete="off" value="tent" onchange=resetavailablepitches(${preferredpitch})>
+                <label class="btn btn-outline-success unitselectbutton" for="tent"><i class="fas fa-campground large"></i></label>
+
+            </div>
+
+            <div id="sizeselect" class="optionselect">
+            
+                <input type="radio" class="btn-check" name="size-select" id="large" autocomplete="off" value="large" onchange=resetavailablepitches(${preferredpitch})>
+                <label class="btn btn-outline-secondary unitselectbutton" for="large">Large</label>
+
+                <input type="radio" class="btn-check" name="size-select" id="small" autocomplete="off" value="small" onchange=resetavailablepitches(${preferredpitch})>
+                <label class="btn btn-outline-secondary unitselectbutton" for="small">Small</label>
+            </div>
+
+            <div id="extraselect" class="optionselect">
+            
+                <input type="checkbox" class="btn-check" id="elec-select" autocomplete="off">
+                <label class="btn btn-outline-secondary unitselectbutton" for="elec-select"><i class="fas fa-bolt large"></i></label>
+
+                <input type="checkbox" class="btn-check" id="awning-select" autocomplete="off">
+                <label class="btn btn-outline-secondary unitselectbutton" for="awning-select"><i class="fas fa-angle-up large"></i></label>
+
+            </div>
+
+            <hr>
+
             <h5>Stay Duration</h5>
             <div class="row">
                 <div class="col">
@@ -1383,13 +1551,51 @@ function launchcreatenewbooking(element) {
                 </div>
             </div>
 
-            <button onclick=createnewbooking()>Submit</button>
+            <button class="btn btn-secondary" onclick=createnewbooking()>Submit</button>
         
         </form>
         `
     
     bookingpanewrapper.append(bookingpane)
     body.append(bookingpanewrapper)
+    let rateselectdiv = document.querySelector("#rateselectdiv")
+
+    //grab the available rate types.
+    fetch('fetchratetypes', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        
+        for (let i=0; i<data.length; i++) {
+            rateoptionbutton = document.createElement("input")
+            rateoptionbutton.type = "radio"
+            rateoptionbutton.className = "btn-check"
+            rateoptionbutton.name = "rate-options"
+            rateoptionbutton.id = `${data[i].name}`
+            rateoptionbutton.setAttribute("autocomplete", "off")
+            rateoptionbutton.value = `${data[i].name}`
+            rateoptionbutton.dataset.id = `${data[i].id}`
+            rateoptionbutton.setAttribute("onClick", "setrate(this)")
+            
+            if (i === 0) {
+                rateoptionbutton.checked = true
+            }
+            
+            rateoptionbuttonlabel = document.createElement("label")
+            rateoptionbuttonlabel.className = "btn btn-outline-success" 
+            rateoptionbuttonlabel.htmlFor = `${data[i].name}`
+            rateoptionbuttonlabel.textContent = `${data[i].name}`
+
+            rateselectdiv.append(rateoptionbutton)
+            rateselectdiv.append(rateoptionbuttonlabel)
+        }
+    })
+}
+
+function setrate(button) {
+    activerate = button.dataset.id
+    recalculate()
 }
 
 function guestsearch(element) {
@@ -1519,19 +1725,47 @@ function createguest() {
 }
 
 function resetavailablepitches(preferredpitch) {
-    availablepitches = ""
-    start = document.querySelector('#arrival').value
-    end = document.querySelector('#departure').value
-    fetch(`serveavailablepitchlist?start=${start}&&end=${end}`)
+
+    let availablepitches = ""
+    let start   = document.querySelector('#arrival').value
+    let end     = document.querySelector('#departure').value
+    let unit    = null
+    let unitoptions = document.getElementsByName("unit-select")
+    
+    unitoptions.forEach((option) => {
+        if (option.checked) {
+            unit = option.value
+        }
+    })
+    
+    let size    = null
+    let sizeoptions = document.getElementsByName("size-select")
+
+    sizeoptions.forEach((option) => {
+        if (option.checked) {
+            size = option.value
+        }
+    })
+    
+    ehu     = document.querySelector('#elec-select').checked
+    awning  = document.querySelector('#awning-select').checked
+    
+    fetch(`serveavailablepitchlist?start=${start}&&end=${end}&&unit=${unit}&&size=${size}&&ehu=${ehu}&&awning=${awning}`)
     .then(response => response.json())
     .then(data => {
-        for (let i=0; i < data.length; i++) {
-            availablepitches += `<option value=${data[i].pk}>${data[i].fields.name}</option>`
+        if (data.length === 0) {
+            availablepitches += `<option value="0">No availability</option>`
+        }
+        else {
+            for (let i=0; i < data.length; i++) {
+                availablepitches += `<option value=${data[i].pk}>${data[i].fields.name}</option>`
+            }
         }
         document.querySelector('#pitchselect').innerHTML = availablepitches
         if (availablepitches.includes(preferredpitch)) {
             document.querySelector('#pitchselect').value = preferredpitch
         }
+        
     })
 }
 
@@ -1546,6 +1780,7 @@ function createnewbooking() {
     const infantno = document.querySelector("#infantno").value
     const petno = document.querySelector("#petno").value
     const vehicleno = document.querySelector("#vehicleno").value
+    const bookingratetype = activerate
     const bookingrate = document.querySelector("#rate").innerHTML
     const bookingpaid = document.querySelector("#paid").value
     const paymentmethod = document.querySelector("#paymentmethod").value
@@ -1561,6 +1796,7 @@ function createnewbooking() {
         infantno: infantno,
         petno: petno,
         vehicleno: vehicleno,
+        bookingratetype: bookingratetype,
         bookingrate: bookingrate,
         bookingpaid: bookingpaid,
         paymentmethod: paymentmethod
@@ -1579,6 +1815,7 @@ function createnewbooking() {
 }
 
 function recalculate() {
+
     //obtain the necessary info from new booking form for rates query
     bookingstart        = document.querySelector("#arrival").value
     bookingend          = document.querySelector("#departure").value
@@ -1590,13 +1827,14 @@ function recalculate() {
     
     // wait until all the required info is present before presenting to the server for rate.
     if (bookingstart && bookingend && adultno && childno && infantno && petno && vehicleno) {
-        fetch(`fetchrate?start=${bookingstart}&end=${bookingend}`, {
+        fetch(`fetchrate?ratetype=${activerate}&start=${bookingstart}&end=${bookingend}`, {
             method: "GET",
         })
 
         .then(response => response.json())
         .then(data => {
             
+            console.log(data)
             //initialize a new variable to hold the rates array for the dates selected (dict type)
             let rates = {}
             
@@ -1875,4 +2113,8 @@ function addextra(extras) {
 function repositioncalendar() {
     repositiondate = document.querySelector('#startdate').value
     window.location.href=`?startdate=${repositiondate}`
+}
+
+function reloadwholecalendar() {
+    console.log("ignored")
 }

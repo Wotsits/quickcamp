@@ -5,13 +5,13 @@ from .models import *
 class PitchTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PitchType
-        fields = ['id', 'name', 'description', 'ehu', 'mindimensions']
+        fields = ['id', 'name', 'description']
 
 class PitchSerializer(serializers.ModelSerializer):
     type = PitchTypeSerializer(many=False, read_only=True)
     class Meta:
         model = Pitch
-        fields = ['id', 'name', 'type']
+        fields = ['id', 'name', 'type', 'acceptsvan', 'acceptstrailertent', 'acceptscaravan', 'acceptstent', 'haselec', 'takesawning']
 
 class GuestSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,6 +54,11 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = ['id', 'pitch', 'guest', 'start', 'end', 'adultno', 'childno', 'infantno', 'petno', 'vehicleno', 'bookingrate', 'totalpayments', 'balance', 'paymentsbybooking', 'commentsbybooking', 'checkedin', 'locked', 'bookingparty', 'bookingvehicles', 'bookingpets'] 
+
+class RateTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RateType
+        fields = ['id', 'name']
 
 class RateSerializer(serializers.ModelSerializer):
     class Meta:

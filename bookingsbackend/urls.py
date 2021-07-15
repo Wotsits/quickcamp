@@ -25,6 +25,7 @@ urlpatterns = [
     path("guest/<int:pk>", views.apiservedetail.as_view(queryset=Guest.objects.all(), serializer_class=GuestSerializer), name="apiserveguestdetail"),
     path("serveavailablepitchlist", views.apiserveavailablepitchlist, name="apiserveavailablepitches"),
     path("createnewbooking", views.apicreatenewbooking, name="createnewbooking"),
+    path("fetchratetypes", views.apiserveratetypes.as_view(), name="apiserveratetypes"),
     path("fetchrate", views.apiserverate, name="apiserverate"),
     path("servepaymentinfo/<int:pk>", views.apiservepaymentlist.as_view(), name="apiservepayments"),
     path("createnewguest", views.apicreate.as_view(queryset=Guest.objects.all(), serializer_class=GuestSerializer), name="apicreateview"),
@@ -35,6 +36,7 @@ urlpatterns = [
     path("createnewpayment", views.apicreatenewpayment, name="createpayment"),
     path("serveextras", views.apiserveextras, name="apiserveextras"),
     path("createnewcomment", views.apicreatecomment, name="apicreatenewcomment"),
+    path("addpartyitem", views.apiaddpartyitem, name="apiaddpartyitem"),
     path("deletepartyitem", views.apideletepartyitem, name="apideletepartyitem"),
     path("updatepartyitem", views.apiupdatepartyitem, name="apiupdatepartyitem"),
     path("movebooking/<int:bookingid>", views.apimovebooking, name="apimovebooking")

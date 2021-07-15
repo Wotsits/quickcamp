@@ -21,11 +21,10 @@ class User(AbstractUser):
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     profilepic = models.URLField()
 
+
 class PitchType(models.Model):
     name = models.CharField(max_length=90)
     description = models.TextField()
-    ehu = models.BooleanField()
-    mindimensions = models.CharField(max_length=30)
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     
     def __str__(self):
@@ -35,9 +34,17 @@ class Pitch(models.Model):
     name = models.CharField(max_length=255)
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     type = models.ForeignKey(PitchType, on_delete=models.CASCADE)
+    acceptsvan = models.BooleanField()
+    acceptstrailertent = models.BooleanField()
+    acceptscaravan = models.BooleanField()
+    acceptstent = models.BooleanField()
+    acceptslarge = models.BooleanField()
+    haselec = models.BooleanField()
+    takesawning = models.BooleanField()
 
     def __str__(self):
         return f'Pitch No {self.name} at {self.site.name}'
+
 
 class Guest(models.Model):
     firstname = models.CharField(max_length=255)
@@ -47,6 +54,12 @@ class Guest(models.Model):
 
     def __str__(self):
         return f'Guest No {self.id} - {self.firstname} {self.surname}'
+
+class RateType(models.Model):
+    name = models.CharField(max_length=30)
+
+    def __str__(self):
+        return f'Rate: {self.name}'
 
 class Booking(models.Model):
     pitch = models.ForeignKey(Pitch, on_delete=models.PROTECT, related_name="bookingsbypitch")
@@ -58,6 +71,7 @@ class Booking(models.Model):
     infantno = models.PositiveSmallIntegerField()
     vehicleno = models.PositiveSmallIntegerField()
     petno = models.PositiveSmallIntegerField()
+    bookingratetype = models.ForeignKey(RateType, on_delete=models.CASCADE)
     bookingrate = models.FloatField()
     totalpayments = models.FloatField()
     balance = models.FloatField()
@@ -107,7 +121,11 @@ class PartyPet(models.Model):
     def __str__(self):
         return f'Pet {self.name} on Booking {self.booking.id}'
 
+
+
+
 class Rate(models.Model):
+    ratetype = models.ForeignKey(RateType, on_delete=models.CASCADE)
     start = models.DateField()
     end = models.DateField()
     baseperbooking = models.FloatField()
@@ -119,7 +137,7 @@ class Rate(models.Model):
     vehicle = models.FloatField()
 
     def __str__(self):
-        return f'Rate {self.id} from {self.start} to {self.end}'
+        return f'{self.ratetype.name} rate from {self.start} to {self.end}'
 
 class Payment(models.Model):
     creationdate = models.DateField(auto_now_add=True)

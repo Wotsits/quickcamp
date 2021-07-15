@@ -77,21 +77,23 @@ h3 {
 
 #calendar {
     display: flex;
+    flex-direction: column;
     margin: 20px;
     max-width: 100vw;
     border: solid 1px rgba(33, 35, 51, 1);
     margin-top: 20px
 }
 
-.calendarbody {
-    overflow-x: scroll;
-} 
+.pitchtypediv {
+    width: 100%
+}
 
 #maincalendarheader .calendaritem, .pitchtitle {
     font-size: 80%;
     color: white;
     background-color: darkslategray
 }
+
 
 #calendarrowtitles {
     position: sticky;
@@ -113,6 +115,44 @@ h3 {
     border: solid 1px darkslategray;
     padding: 5px;
 }
+
+.pitchtypetitle {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+}
+
+.pitchtyperowheadertitle, .pitchdivspacer {
+    margin-bottom: 0px;
+    height: 34px; /* This is necessary to keep calendar pitch type divs aligned */
+    padding: 5px; /* And this... */
+    overflow: visible;
+    white-space: nowrap;
+}
+
+/* testing styling */
+#calendar {
+    min-width: 90%;
+    min-height: 100px;
+    display: grid;
+    grid-template-columns: 150px auto;
+    grid-template-rows: auto;
+    
+}
+
+#calendarleft {
+    grid-column-start: 1;
+    grid-column-end: 2;
+}
+
+#calendarright {
+    grid-column-start: 2;
+    grid-column-end: 3;
+    overflow-x: scroll;
+
+}
+
+/* end testing styling */
 
 .balancedue {
     background-color: red;
@@ -165,6 +205,33 @@ h3 {
     border: solid 1px darkslategray;
     border-radius: 5px;
     overflow-y: scroll;
+}
+
+#rateselectdiv {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+#rateselectdiv input, #rateselectdiv label {
+    max-width: 200px
+}
+
+.optionselect {
+    display: flex;
+    min-height: 100px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.unitselectbutton {
+    margin: 10px;
+    padding: 20px
+}
+
+.large {
+    font-size: 200%;
 }
 
 .messagediv {

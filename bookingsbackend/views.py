@@ -1,3 +1,4 @@
+from json import encoder
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth import default_app_config, logout, login, authenticate
@@ -161,9 +162,9 @@ def dashboard(request):
     # obtain a count of all today's arrivals.
     arrivalscount = arrivals.count()
     # obtain a count of all checked-in arrivals. 
-    checkedincount = [arrivals.filter(checkedin=True).count()]
+    checkedincount = arrivals.filter(checkedin=True).count()
     # calculate due arrivals
-    duecount = arrivalscount = checkedincount 
+    duecount = (arrivalscount - checkedincount) 
     # set value of y for plotting
     y = [0]
 
@@ -180,6 +181,7 @@ def dashboard(request):
         ticksdistribution = 5
     else:
         ticksdistribution = 10
+    
     plt.xticks(numpy.arange(0, arrivalscount+1, ticksdistribution))
     y_labels = ['Today']
     plt.yticks(y, y_labels)
@@ -461,13 +463,16 @@ def apideletepayment(request, pk):
 @login_required
 def apiserverate(request):
     # parse params from GET request
+    rateid = int(request.GET['ratetype'])
     start = date.fromisoformat(request.GET['start'])
     end = date.fromisoformat(request.GET['end'])
 
+    ratetype = RateType.objects.get(id=rateid)
     # collate the applicable rates
-    queryset1 = Rate.objects.filter(start__range=[start, end-timedelta(1)])
-    queryset2 = Rate.objects.filter(end__range=[start+timedelta(1), end])
-    queryset3 = Rate.objects.filter(start__range=["2001-01-01", start], end__range=[end, "2100-12-31"])
+    queryset = Rate.objects.filter(ratetype=ratetype)
+    queryset1 = queryset.filter(start__range=[start, end-timedelta(1)])
+    queryset2 = queryset.filter(end__range=[start+timedelta(1), end])
+    queryset3 = queryset.filter(start__range=["2001-01-01", start], end__range=[end, "2100-12-31"])
     rates = queryset1 | queryset2 | queryset3
 
     # return the applicable rates
@@ -499,6 +504,7 @@ def apicreatenewbooking(request):
         infantno = payload['infantno']
         petno = payload['petno']
         vehicleno = payload['vehicleno']
+        bookingratetypeid = int(payload['bookingratetype'])
         bookingrate = float(payload['bookingrate'])
         bookingpaid = float(payload['bookingpaid'])
         balance = bookingrate - bookingpaid
@@ -507,6 +513,7 @@ def apicreatenewbooking(request):
     # get the guest and pitch instances associated with the ids sent from frontend.
     guest = Guest.objects.get(id=guestid)
     pitch = Pitch.objects.get(id=pitchid)
+    bookingratetype = RateType.objects.get(id=bookingratetypeid)
 
     # catch circumstances where booking made which fouls this booking
     duplicate = False
@@ -534,6 +541,7 @@ def apicreatenewbooking(request):
             infantno        =infantno,
             petno           =petno,
             vehicleno       =vehicleno,
+            bookingratetype =bookingratetype,
             bookingrate     =bookingrate,
             totalpayments   =bookingpaid,
             balance         =balance
@@ -594,6 +602,10 @@ def apiserveavailablepitchlist(request):
     # obtains the iso format date from the GET params and converts to Date object
     start = date.fromisoformat(request.GET['start'])
     end = date.fromisoformat(request.GET['end'])
+    unit = request.GET['unit']
+    size = request.GET['size']
+    ehu = request.GET['ehu']
+    awning = request.GET['awning']
 
     # get all bookings within the date range
     bookingsstart = Booking.objects.filter(start__range=[start, end-timedelta(1)])                                  #extract all bookings where start date is within requested date range
@@ -617,6 +629,31 @@ def apiserveavailablepitchlist(request):
         if pitch not in unavailablepitches:
             availablepitches |= Pitch.objects.filter(pk=pitch.pk)
     
+    # unit type filter logic
+    if unit == 'van':
+        availablepitches = availablepitches.filter(acceptsvan=True)
+            
+    elif unit == 'trailertent':
+        availablepitches = availablepitches.filter(acceptstrailertent=True)
+
+    elif unit == 'caravan':
+        availablepitches = availablepitches.filter(acceptscaravan=True)
+    
+    elif unit == 'tent':
+        availablepitches = availablepitches.filter(acceptstent=True)
+    
+    else:
+        print('Unit type is not defined in backend logic')
+    
+    # ehu filter logic
+    if ehu == "true":
+        availablepitches = availablepitches.filter(haselec=True)
+    
+    # awning filter logic
+    if awning == "true":
+        availablepitches = availablepitches.filter(takesawning=True)
+
+
     #return the available pitches
     data = core_serializers.serialize("json", availablepitches)                                                          #serialize availablepitches
     return HttpResponse(data, content_type='application/json')                                                      #return json obj
@@ -678,6 +715,42 @@ def apicreatecomment(request):
     data = core_serializers.serialize('json', [comment, ])  
     return HttpResponse(data, status=202, content_type='application/json')
 
+
+def apiaddpartyitem(request):
+    
+    # unpack payload
+    payload = json.loads(request.body)
+    bookingid = payload['bookingid']
+    itemtype = payload['itemtype']
+
+    booking = Booking.objects.get(id=bookingid)
+
+    if itemtype == "member":
+        newitem = PartyMember(
+            firstname = "",
+            surname = "",
+            type = "Adult",
+        )
+    elif itemtype == "pet":
+        newitem = PartyPet(
+            name = ""
+        )
+    elif itemtype == "vehicle":
+        newitem = PartyVehicle(
+            vehiclereg = ""
+        )
+    
+    newitem.checkedin = False
+    newitem.noshow = False
+    newitem.booking = booking
+    newitem.start = booking.start
+    newitem.end = booking.end
+    newitem.save()
+
+    helpers.updatebooking("add", newitem, booking)
+
+    data = core_serializers.serialize('json', [newitem, ])  
+    return HttpResponse(data, status=202, content_type='application/json')
 
 # FBV delete party member view.  
 # Used to delete party member after reduction of party numbers.
@@ -822,6 +895,14 @@ def apimovebooking(request, bookingid):
 
     data = core_serializers.serialize('json', [target, ])  
     return HttpResponse(data, status=200, content_type='application/json')
+
+# CBV list view. 
+# Custom get_queryset method to serve payments associated with specific booking. 
+class apiserveratetypes(ListAPIView):
+    queryset = RateType.objects.all()
+    serializer_class = RateTypeSerializer
+    
+    
 
 
 '''
