@@ -221,8 +221,13 @@ def dashboard(request):
 @login_required
 def arrivals(request):
 
+    try: 
+        arrivaldate = request.GET['arrivaldate']
+    except:
+        arrivaldate = date.today()
+    
     # grab all the arrivals due today
-    allarrivals = Booking.objects.filter(start=date.today())
+    allarrivals = Booking.objects.filter(start=arrivaldate)
     # filter for due and checked-in and order each by guest surname.
     duearrivals = allarrivals.filter(checkedin=False).order_by("guest__surname")
     checkedinarrivals = allarrivals.filter(checkedin=True).order_by("guest__surname")

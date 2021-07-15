@@ -24,15 +24,14 @@ function closepaneandreloadbookingpane(bookingid) {
     catch {}
     
     document.querySelector('#bookingpanewrapper').remove()
+    reloadwholecalendar()
     displaybookingpane(bookingid)
 }
 
 function startloadspinner() {
-    console.log("triggered")
     loadspinnerwrapper = document.createElement("div")
     loadspinnerwrapper.className = "panewrapper"
     loadspinnerwrapper.id = "loadspinnerwrapper"
-
     loadspinner = document.createElement("div")
     loadspinner.innerHTML = '<div class="lds-ring"><div></div><div></div><div></div><div></div></div>'
     body.append(loadspinnerwrapper)
@@ -42,3 +41,4 @@ function startloadspinner() {
 function endloadspinner() {
     document.querySelector("#loadspinnerwrapper").remove()
 }
+

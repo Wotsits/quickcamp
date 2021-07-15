@@ -6,6 +6,10 @@
 
     
     <div class="wrapper" id="arrivalswrapper">
+        <form id="datepicker">
+            <input type="date" onChange=choosearrivalday(this) id="arrivaldate" class="form-control" name="arrivaldate"></input>
+        </form>
+    
         <input type="text" class="form-control" id="arrivalssearch" onkeyup=arrivalsfilter() autofocus placeholder="Arrivals filter"></input>
         <h4>Due Arrivals</h4>
         <table id="duetablefull" class="table table-striped">

@@ -31,6 +31,11 @@ function rfc3339(d) {
 
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
+
+// Global variable initialisation for selectbooking() function
+let selectedbooking = ""
+let selectstate = false
+
 /////// WHAT IS TODAY IN THE EYES OF THE CALENDAR
 
 // grab the queryString from the url
@@ -297,6 +302,7 @@ function fetchbookings() {
                 let elementdate = parseInt(element.getAttribute("data-date"))
                 // if the elementdate is within the booking range
                 if (elementdate >= bookingstart && elementdate < bookingend) {
+ 
                     // style the booking alerts into the calendar
                     if (balance !== 0.00) {
                         element.classList.add("balancedue")
@@ -315,6 +321,13 @@ function fetchbookings() {
                                         
                     element.setAttribute("onclick", `selectbooking(${data[i].id})`)
 
+                
+                    // check if the booking is selected
+                    if (selectstate === true && bookingid === selectedbooking) {
+                        element.style.backgroundColor = "yellow"
+                        element.dataset.state = "selected"
+                    }
+                    
                     // special logic for the first day of booking calendar render, e.g. booking surname and attribute graphic representation such as 'locked' padlock
                     if (elementdate == bookingstart) {
                         if (locked) {
@@ -334,13 +347,14 @@ function fetchbookings() {
 /////////////////////////// MAIN LOAD FLOW - calls the functions defined above in order.
 
 document.addEventListener("DOMContentLoaded", async () => {
-    
+    startloadspinner()
     await setupcalendarrowtitles()
     setupcalendarheader()
     setupcalendarbody()
     //pre-loads one backward step 
     loadbackward()
     calendarinfinitescroll()
+    endloadspinner()
     
 
 })
@@ -358,17 +372,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 ////////////////////////// SELECT BOOKING FUNCTIONALITY
 
 // variable initialization for select booking functionality.
-let selectedbooking = ""
-let selectstate = false
+
 const displaybutton = document.querySelector("#displaybutton")
 const movebutton = document.querySelector("#movebutton")
-const fulleditbutton = document.querySelector("#fulleditbutton")
 const controlpanel = document.querySelector("#controlpanel")
 
 function selectbooking(bookingid) {
     
     // grabs each pitch-day from calendar
-    bookingblocksoncalendar = document.querySelectorAll(".calendaritem")
+    bookingblocksoncalendar = document.querySelectorAll(".calendarbodyitem")
 
     // conditional first checks if a different booking is already selected
     if ((!(selectedbooking === bookingid)) && selectstate === true) {
@@ -386,8 +398,6 @@ function selectbooking(bookingid) {
         displaybutton.setAttribute("disabled", true)
         movebutton.removeAttribute("onclick")
         movebutton.setAttribute("disabled", true)
-        fulleditbutton.removeAttribute("onclick")
-        fulleditbutton.setAttribute("disabled", true)
 
         // resets the selectstate to false
         selectstate = false
@@ -418,16 +428,12 @@ function selectbooking(bookingid) {
         displaybutton.removeAttribute("disabled")
         movebutton.setAttribute("onclick", `movebooking(${bookingid})`)
         movebutton.removeAttribute("disabled")
-        fulleditbutton.setAttribute("onclick", `editbookingpane(${bookingid})`)
-        fulleditbutton.removeAttribute("disabled")
     } 
     else {
         displaybutton.removeAttribute("onclick")
         displaybutton.setAttribute("disabled", true)
         movebutton.removeAttribute("onclick")
         movebutton.setAttribute("disabled", true)
-        fulleditbutton.removeAttribute("onclick")
-        fulleditbutton.setAttribute("disabled", true)
     }
 }
 
@@ -526,7 +532,7 @@ function loadbackward() {
             //create the divs and set the pitch, date and onclick attributes
             for (j=6; j>=0; j--) {
                 let calendaritem = document.createElement('div')
-                calendaritem.className = "calendaritem"
+                calendaritem.className = "calendaritem calendarbodyitem"
                 calendaritem.setAttribute("data-pitch", pitchid)
                 calendaritem.setAttribute("data-date", Date.parse(forwardDates[j]))
                 calendaritem.setAttribute("onclick", "launchcreatenewbooking(this)")
@@ -589,7 +595,7 @@ function loadforward() {
             //create the divs and set the pitch, date and onclick attributes
             for (j=0; j<7; j++) {
                 let calendaritem = document.createElement('div')
-                calendaritem.className = "calendaritem"
+                calendaritem.className = "calendaritem calendarbodyitem"
                 calendaritem.setAttribute("data-pitch", pitchid)
                 calendaritem.setAttribute("data-date", Date.parse(forwardDates[j]))
                 calendaritem.setAttribute("onclick", "launchcreatenewbooking(this)")
@@ -721,7 +727,6 @@ function displaybookingpane(bookingid) {
                 </fieldset>
             </div>
             <div class="controlbuttons">
-                <button id="loadeditmenubutton" class="btn btn-secondary")>Show Edit Menu</button>    
                 <button class="btn btn-secondary" onclick=loadpaymentdetail(${bookingid})>View Payments Detail</button>
                 <button id="loadcommentsbutton" class="btn btn-secondary">View Comments</button>
             </div>
@@ -739,12 +744,6 @@ function displaybookingpane(bookingid) {
                 </div>
             `
         }
-
-        // add event listener to load comments button and pass in the comments. 
-        loadeditmenubutton = document.querySelector("#loadeditmenubutton")
-        loadeditmenubutton.addEventListener("click", () => {
-            loadeditmenu(data)
-        })
 
         // add event listener to load comments button and pass in the comments. 
         loadcommentsbutton = document.querySelector("#loadcommentsbutton")
@@ -1215,7 +1214,6 @@ function updatepartyitem(element, bookingid) {
     })
     .then(data => {
         endloadspinner()
-        console.log(data)
     })
 }
 
@@ -1254,34 +1252,6 @@ function deletepartyitem(element) {
         endloadspinner()
     })
     }
-
-// called when Edit Booking button pressed in booking pane. 
-function loadeditmenu(bookingdata) {
-
-    // build the edit pane wrapper and element.
-    const editpanewrapper = document.createElement("div");
-    editpanewrapper.className = "panewrapper";
-    editpanewrapper.id = "editpanewrapper";
-
-    const editpane = document.createElement("div");
-    editpane.className = "pane"
-    editpane.id = "editpane"
-    editpane.innerHTML = `
-        <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(editpanewrapper)></i></p>
-        <h3>Booking Edit Menu</h3>
-        <div id="editbuttons">
-            <button type="button" class="btn btn-secondary" onclick='editleadguest(${bookingdata.id}, ${bookingdata.guest.id})'>Edit Lead Guest</button>
-        </div>
-        <div id="editactionpanel"></div>
-        `
-
-    body.append(editpanewrapper);
-    editpanewrapper.append(editpane);
-
-    document.querySelector("#editpartynumbersbutton").addEventListener("click", () => {
-        editpartynumbers(bookingdata)
-    })
-}
 
 
 
@@ -2115,6 +2085,21 @@ function repositioncalendar() {
     window.location.href=`?startdate=${repositiondate}`
 }
 
+//this function reloads the whole calendar render when things have changed.  
 function reloadwholecalendar() {
-    console.log("ignored")
+    startloadspinner()
+    //reset the whole calandar to blank
+    document.querySelectorAll(".calendarbodyitem").forEach((element) => {
+        element.innerHTML = ""
+        element.className = "calendaritem calendarbodyitem"
+        element.setAttribute("onclick", "launchcreatenewbooking(this)")
+        element.removeAttribute("data-bookingid")
+        element.removeAttribute("data-originalcolor")
+        element.removeAttribute("style")
+        element.removeAttribute("data-state")
+    })
+    fetchbookings()
+    selectbooking(selectedbooking)
+    endloadspinner()
+
 }

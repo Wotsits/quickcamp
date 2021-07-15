@@ -2,7 +2,51 @@
 JS for arrivals.html
 */
 
+//////////////////////// HELPER FUNCTION
+
+function rfc3339(d) {
+    
+  function pad(n) {
+      return n < 10 ? "0" + n : n;
+  }
+
+  function timezoneOffset(offset) {
+      var sign;
+      if (offset === 0) {
+          return "Z";
+      }
+      sign = (offset > 0) ? "-" : "+";
+      offset = Math.abs(offset);
+      return sign + pad(Math.floor(offset / 60)) + ":" + pad(offset % 60);
+  }
+
+  return d.getFullYear() + "-" +
+      pad(d.getMonth() + 1) + "-" +
+      pad(d.getDate()) + "T" +
+      pad(d.getHours()) + ":" +
+      pad(d.getMinutes()) + ":" +
+      pad(d.getSeconds()) + 
+      timezoneOffset(d.getTimezoneOffset());
+}
+
+
 //////////////////////// GLOBAL VARIABLE INITIALISATION
+
+// grab the queryString from the url
+const queryString = window.location.search
+// grab the searchparams from the querystring
+const urlParams = new URLSearchParams(queryString)
+// set today variable to either today or the startdate url get param. 
+if (urlParams.get("arrivaldate")) {
+    today = new Date(urlParams.get("arrivaldate"))
+} else {
+    today = new Date(Date.now())
+}
+
+// set the date input to the value of startdate variable.
+document.querySelector('#arrivaldate').value = rfc3339(today).slice(0, 10)  //this grabs the first 10chars from the ISO string
+
+
 
 //grabs the filter input field for use later. 
 const arrivalsfilterinput = document.querySelector('#arrivalssearch')
@@ -263,4 +307,9 @@ function checkin(button) {
     sortTable(targetarrival.parentNode)
           
   })
+}
+
+
+function choosearrivalday(element) {
+  element.form.submit()
 }
