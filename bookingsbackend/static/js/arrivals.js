@@ -152,47 +152,57 @@ function displaycheckinpane(bookingid) {
 
     //populate the vehicles div
     vehiclesdiv = document.querySelector("#vehiclesdiv")
+    
     //for each vehicle...
     for (i = 0; i < data.bookingvehicles.length; i++) {
-      vehiclebutton = document.createElement("button")
-      vehiclebutton.innerHTML = `${data.bookingvehicles[i].vehiclereg}`
-      vehiclebutton.type = "button"
-      vehiclebutton.setAttribute("onClick", "checkin(this)")
-      vehiclebutton.setAttribute("data-id", `${data.bookingvehicles[i].id}`)
-      vehiclebutton.setAttribute("data-type", "vehicle")
-      //if checkin flag is true...
-      if (data.bookingvehicles[i].checkedin) {
-        //set the button green and change the data-instruction attribute. 
-        vehiclebutton.className = "btn btn-success btn-lg"
-        vehiclebutton.setAttribute("data-instruction", "checkout")
+      
+      //check if the vehicle is due to arrive today before displaying it.
+      if (new Date(data.bookingvehicles[i].start).toDateString() === today.toDateString()) {
+        vehiclebutton = document.createElement("button")
+        vehiclebutton.innerHTML = `${data.bookingvehicles[i].vehiclereg}`
+        vehiclebutton.type = "button"
+        vehiclebutton.setAttribute("onClick", "checkin(this)")
+        vehiclebutton.setAttribute("data-id", `${data.bookingvehicles[i].id}`)
+        vehiclebutton.setAttribute("data-type", "vehicle")
+        
+        //if checkin flag is true...
+        if (data.bookingvehicles[i].checkedin) {
+          //set the button green and change the data-instruction attribute. 
+          vehiclebutton.className = "btn btn-success btn-lg"
+          vehiclebutton.setAttribute("data-instruction", "checkout")
+        }
+        else {
+          vehiclebutton.className = "btn btn-secondary btn-lg"
+          vehiclebutton.setAttribute("data-instruction", "checkin")
+        }
+        vehiclesdiv.append(vehiclebutton)
       }
-      else {
-        vehiclebutton.className = "btn btn-secondary btn-lg"
-        vehiclebutton.setAttribute("data-instruction", "checkin")
-      }
-      vehiclesdiv.append(vehiclebutton)
     }
 
     //populate the party member div.
     partydiv = document.querySelector("#partydiv")
     //for each party member...
     for (i = 0; i < data.bookingparty.length; i++) {
-      memberbutton = document.createElement("button")
-      memberbutton.innerHTML = `${data.bookingparty[i].firstname} ${data.bookingparty[i].surname} - ${data.bookingparty[i].type}`
-      memberbutton.type = "button"
-      memberbutton.setAttribute("onClick", "checkin(this)")
-      memberbutton.setAttribute("data-id", `${data.bookingparty[i].id}`)
-      memberbutton.setAttribute("data-type", "member")
-      //if the checkin flag is true...
-      if (data.bookingparty[i].checkedin) {
-          memberbutton.className = "btn btn-success btn-lg"
-          memberbutton.setAttribute("data-instruction", "checkout")
+
+      //check if the vehicle is due to arrive today before displaying it.
+      if (new Date(data.bookingparty[i].start).toDateString() === today.toDateString()) {
+        memberbutton = document.createElement("button")
+        memberbutton.innerHTML = `${data.bookingparty[i].firstname} ${data.bookingparty[i].surname} - ${data.bookingparty[i].type}`
+        memberbutton.type = "button"
+        memberbutton.setAttribute("onClick", "checkin(this)")
+        memberbutton.setAttribute("data-id", `${data.bookingparty[i].id}`)
+        memberbutton.setAttribute("data-type", "member")
+        //if the checkin flag is true...
+        if (data.bookingparty[i].checkedin) {
+            memberbutton.className = "btn btn-success btn-lg"
+            memberbutton.setAttribute("data-instruction", "checkout")
+        }
+        else {
+            memberbutton.className = "btn btn-secondary btn-lg"
+            memberbutton.setAttribute("data-instruction", "checkin")
+        }
+        partydiv.append(memberbutton)
       }
-      else {
-          memberbutton.className = "btn btn-secondary btn-lg"
-          memberbutton.setAttribute("data-instruction", "checkin")
-      }
-      partydiv.append(memberbutton)
     }
   })
 }

@@ -219,7 +219,7 @@ def dashboard(request):
 
 # renders the arrivals template when called and populates it.  This view presents the daily arrivals list.
 @login_required
-def arrivals(request):
+def oldarrivalsfunction(request):
 
     try: 
         arrivaldate = request.GET['arrivaldate']
@@ -228,6 +228,7 @@ def arrivals(request):
     
     # grab all the arrivals due today
     allarrivals = Booking.objects.filter(start=arrivaldate)
+    
     # filter for due and checked-in and order each by guest surname.
     duearrivals = allarrivals.filter(checkedin=False).order_by("guest__surname")
     checkedinarrivals = allarrivals.filter(checkedin=True).order_by("guest__surname")
@@ -239,6 +240,25 @@ def arrivals(request):
     })
 
 
+@login_required
+def arrivals(request):
+
+    try: 
+        arrivaldate = request.GET['arrivaldate']
+    except:
+        arrivaldate = date.today()
+    
+    # grab all the arrivals due today
+    allarrivals = Booking.objects.filter(bookingparty__in = PartyMember.objects.filter(start=arrivaldate)).distinct()
+    
+    # filter for due and checked-in and order each by guest surname.
+    duearrivals = allarrivals.filter(checkedin=False).order_by("guest__surname")
+    checkedinarrivals = allarrivals.filter(checkedin=True).order_by("guest__surname")
+    
+    # render the page. 
+    return render(request, "bookingsbackend/arrivals.html", {
+        "duearrivals": duearrivals,
+    })
     
 ##################################################
 ##################################################

@@ -6,8 +6,10 @@
 
     
     <div class="wrapper" id="arrivalswrapper">
+        {% now "DATE_FORMAT" as today_date %}
+        
         <form id="datepicker">
-            <input type="date" onChange=choosearrivalday(this) id="arrivaldate" class="form-control" name="arrivaldate"></input>
+            <input type="date" onChange=choosearrivalday(this) id="arrivaldate" class="form-control" name="startdate"></input>
         </form>
     
         <input type="text" class="form-control" id="arrivalssearch" onkeyup=arrivalsfilter() autofocus placeholder="Arrivals filter"></input>
@@ -36,7 +38,7 @@
                             <td>{{arrival.pitch.name}}</td>
                             <td>
                                 {% for member in arrival.bookingparty.all %}
-                                    
+                                    {% if member.start|date == today_date %}    
                                         {% if member.checkedin %}    
                                             <p id="guest-{{member.id}}" class="checkedin">
                                                 {% if member.type == "Adult"%}
@@ -59,18 +61,23 @@
                                                 {{member.firstname}} {{member.surname}}</p>
                                         {% endif %}
                                     
+                                    {% endif %}
+                                    
                                 {% endfor %}
                             </td>
-                            <td>
+                            <td> 
                                 {% for vehicle in arrival.bookingvehicles.all %} 
-                                    {% if not vehicle.noshow %}
-                                        {% if vehicle.checkedin %}
-                                            <p id="vehicle-{{vehicle.id}}" class="checkedin">{{vehicle.vehiclereg}}</p>
-                                        {% else %}
-                                            <p id="vehicle-{{vehicle.id}}">{{vehicle.vehiclereg}}</p>
+                                    {% if vehicle.start|date == today_date %} 
+                                        {% if not vehicle.noshow %}
+                                            {% if vehicle.checkedin %}
+                                                <p id="vehicle-{{vehicle.id}}" class="checkedin">{{vehicle.vehiclereg}}</p>
+                                            {% else %}
+                                                <p id="vehicle-{{vehicle.id}}">{{vehicle.vehiclereg}}</p>
+                                            {% endif %}
                                         {% endif %}
                                     {% endif %}
                                 {% endfor %}
+                                
                             </td>
                         </tr>
                 {% endfor %}
@@ -97,7 +104,7 @@
                         <td>{{arrival.pitch.name}}</td>
                         <td>
                             {% for member in arrival.bookingparty.all %}
-                                
+                                {% if member.start|date == today_date %}  
                                     {% if member.checkedin %}    
                                         <p id="guest-{{member.id}}" class="checkedin">
                                             {% if member.type == "Adult"%}
@@ -119,16 +126,18 @@
                                             {% endif %}
                                             {{member.firstname}} {{member.surname}}</p>
                                     {% endif %}
-                                
+                                {% endif %}
                             {% endfor %}
                         </td>
                         <td>
                             {% for vehicle in arrival.bookingvehicles.all %} 
-                                {% if not vehicle.noshow %}
-                                    {% if vehicle.checkedin %}
-                                        <p id="vehicle-{{vehicle.id}}" class="checkedin">{{vehicle.vehiclereg}}</p>
-                                    {% else %}
-                                        <p id="vehicle-{{vehicle.id}}">{{vehicle.vehiclereg}}</p>
+                                {% if vehicle.start|date == today_date %}  
+                                    {% if not vehicle.noshow %}
+                                        {% if vehicle.checkedin %}
+                                            <p id="vehicle-{{vehicle.id}}" class="checkedin">{{vehicle.vehiclereg}}</p>
+                                        {% else %}
+                                            <p id="vehicle-{{vehicle.id}}">{{vehicle.vehiclereg}}</p>
+                                        {% endif %}
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}

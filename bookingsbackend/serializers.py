@@ -26,17 +26,17 @@ class PaymentSerializer(serializers.ModelSerializer):
 class PartyMemberSerializer(serializers.ModelSerializer):
     class Meta: 
         model = PartyMember
-        fields = ['id', 'firstname', 'surname', 'start', 'end', 'type', 'checkedin', 'noshow']
+        fields = ['id', 'firstname', 'surname', 'start', 'end', 'booking', 'type', 'checkedin', 'noshow']
 
 class PartyVehicleSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartyVehicle
-        fields = ['id', 'vehiclereg', 'checkedin', 'start', 'end']
+        fields = ['id', 'vehiclereg', 'booking', 'checkedin', 'start', 'end']
 
 class PartyPetSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartyPet
-        fields = ['id', 'name', 'checkedin', 'start', 'end']
+        fields = ['id', 'name', 'booking', 'checkedin', 'start', 'end']
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
