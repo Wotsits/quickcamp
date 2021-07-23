@@ -18,7 +18,12 @@ from django.utils import timezone
 from datetime import datetime, timedelta, date
 from dateutil import parser
 import json
+
+# this handles a runtime error thrown by matplotlib rendering outside main thread
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
 import numpy
 from . import helpers
 
@@ -115,7 +120,7 @@ def calendar(request):
 def dashboard(request):
 
     # obtain the dataset once at the beginning of the flow
-    arrivals = Booking.objects.filter(start=date.today())
+    arrivals = PartyVehicle.objects.filter(start=date.today())
         
     ######## DASHBOARD ELEMENT 1 ########
     # presents a visual summary of forecast arrival times
@@ -154,6 +159,7 @@ def dashboard(request):
     # save the graph - TODO as path needs to not be hardcoded
     savepath = '/Users/admin/Documents/SimonsProjects/CS50W/QuickCamp/quickcamp/bookingsbackend/static/images/arrivalsbytime.png'
     plt.savefig(savepath)
+    plt.close()
     
 
     ######## DASHBOARD ELEMENT 2 ########
@@ -193,6 +199,7 @@ def dashboard(request):
     plt.tight_layout()
     savepath = '/Users/admin/Documents/SimonsProjects/CS50W/QuickCamp/quickcamp/bookingsbackend/static/images/arrivals.png'
     plt.savefig(savepath)
+    plt.close()
 
     ######## DASHBOARD ELEMENT 3 ########
     # presents a summary of payments received today
@@ -244,20 +251,17 @@ def oldarrivalsfunction(request):
 def arrivals(request):
 
     try: 
-        arrivaldate = request.GET['arrivaldate']
+        arrivaldate = request.GET['startdate']
     except:
         arrivaldate = date.today()
     
     # grab all the arrivals due today
-    allarrivals = Booking.objects.filter(bookingparty__in = PartyMember.objects.filter(start=arrivaldate)).distinct()
-    
-    # filter for due and checked-in and order each by guest surname.
-    duearrivals = allarrivals.filter(checkedin=False).order_by("guest__surname")
-    checkedinarrivals = allarrivals.filter(checkedin=True).order_by("guest__surname")
+    allarrivals = Booking.objects.filter(bookingparty__in = PartyMember.objects.filter(start=arrivaldate)).distinct().order_by("guest__surname")
     
     # render the page. 
     return render(request, "bookingsbackend/arrivals.html", {
-        "duearrivals": duearrivals,
+        "duearrivals": allarrivals,
+        "arrivaldate": arrivaldate
     })
     
 ##################################################
@@ -344,25 +348,25 @@ class apiservedetail(RetrieveAPIView):
 ########## Function-based Views ############
 
 # helper function
-def updateBookingIfAllIn(booking):
+def updateBookingCheckInStatus(booking):
     '''
     This function is called after a member of the party is checked in or out.  
-    If all members are checked in, the checked in status of the booking is updated
-    If all members are checked in and then one is checked out, 
-    the checked in status of the booking is reverted to false
+    If any members are checked in, the checked in status of the booking is updated to true,
+    else, it is false.      
     '''
 
     # Queryset called which presents any party members not checked in.  
-    guests = PartyMember.objects.filter(booking=booking, checkedin=False)
+    guests = PartyMember.objects.filter(booking=booking, checkedin=True)
 
-    # If the length of the queryset is 0, this means that there are no uncheckedin party members.  
+    # If the length of the queryset is 0, this means that there are no party members checked in.  
     if len(guests) == 0:
-        # therefore the booking can be checked in.  
-        booking.checkedin = True
+        # therefore the booking checkedin status should be set to False.  
+        booking.checkedin = False
         booking.save()
     else:
-        # else, the booking is not complete and checkedin flag is false. 
-        booking.checkedin = False
+        # else, at least one guest is on pitch so the checkedin flag is set to true and the booking locked. 
+        booking.checkedin = True
+        booking.locked = True
         booking.save()
 
     return booking
@@ -381,7 +385,7 @@ def checkinguest(request):
     guest.save()
     # get the related booking and pass into the helper function above. 
     booking = guest.booking
-    booking = updateBookingIfAllIn(booking)
+    booking = updateBookingCheckInStatus(booking)
 
     # return the booking
     data = core_serializers.serialize('json', [booking, ])                                                       #serialize availablepitches
@@ -398,7 +402,7 @@ def checkinvehicle(request):
     vehicle.checkedin = checkedin
     vehicle.save()
     booking = vehicle.booking
-    booking = updateBookingIfAllIn(booking)
+    booking = updateBookingCheckInStatus(booking)
     
     data = core_serializers.serialize('json', [booking, ])                                                       #serialize availablepitches
     return HttpResponse(data, status=200, content_type='application/json')

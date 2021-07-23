@@ -37,8 +37,8 @@ const queryString = window.location.search
 // grab the searchparams from the querystring
 const urlParams = new URLSearchParams(queryString)
 // set today variable to either today or the startdate url get param. 
-if (urlParams.get("arrivaldate")) {
-    today = new Date(urlParams.get("arrivaldate"))
+if (urlParams.get("startdate")) {
+    today = new Date(urlParams.get("startdate"))
 } else {
     today = new Date(Date.now())
 }
@@ -83,41 +83,6 @@ function arrivalsfilter() {
   }
 }
 
-//Function sorts arrivals table when elements are moved between due and arrived.  Called by checkin(). 
-//Passed in table is the table into which the new entry has been placed.
-function sortTable(table) {
-  
-  //set flag to true
-  switching = true
-
-  while (switching) {
-    //set flag to false
-    switching = false
-
-    //grabs the rows of the table.
-    rows = table.rows
-
-    //for each row
-    for (i=0; i<(rows.length-1); i++) {
-      //set shouldswitch flag to false
-      shouldswitch = false
-      //grab the text content of the first field of row i and row i+1
-      x = rows[i].getElementsByTagName("TD")[0].textContent.toLowerCase()
-      y = rows[i+1].getElementsByTagName("TD")[0].textContent.toLowerCase()
-      //compare them and if i is greater than i+1, change flag to should switch and break out of loop.
-      if (x > y) {
-        shouldswitch = true
-        break
-      }
-    }
-
-    //if shouldswitch flag true, switch position.
-    if (shouldswitch) {
-      rows[i].parentNode.insertBefore(rows[i+1], rows[i])
-      switching = true
-    }
-  }
-}
 
 //fires onclick of arrival <tr> element and passes in booking id.
 function displaycheckinpane(bookingid) {
@@ -273,53 +238,107 @@ function checkin(button) {
       button.dataset.instruction = "checkin"
     }
     
-    //in the background, the due/arrived tables are being reorganised.  
+    //in the background, the due/arrived tables are being updated.  
     //grab the arrival row being amended. 
     targetarrival = document.querySelector(`#arrival-${data[0].pk}`)
-
-    //grab the duetablebody
-    duetablebody = document.querySelector("#duetable")
-
-    //grab the arrived table body. 
-    arrivedtablebody = document.querySelector("#arrivedtable")
-        
-    //look at the checkin status of the booking to see if it is now completely checked in.
-    if (data[0].fields.checkedin) {
-      //if it is checked in, we need to move the booking from due to arrived table.  
-      arrivedtablebody.append(targetarrival)                
-    }
-    else {
-      //else, put it in the due table if not already there
-      if (targetarrival.parentNode !== duetablebody) {
-        duetablebody.append(targetarrival)
-      }
-    }
 
     //this logic finds the member/vehicle in the arrivals lists and sets text color to green (via class)
     if (type === "member") {
       if (instruction === true) {
-        document.querySelector(`#guest-${pk}`).className = "checkedin"
+        targetarrival.querySelector(`#guest-${pk}`).className = "person checkedin"
       }
       else {
-        document.querySelector(`#guest-${pk}`).className = ""
+        targetarrival.querySelector(`#guest-${pk}`).className = "person"
       }
     }
     else {
       if (instruction === true) {
-        document.querySelector(`#vehicle-${pk}`).className = "checkedin"
+        targetarrival.querySelector(`#vehicle-${pk}`).className = "vehicle checkedin"
       }
       else {
-        document.querySelector(`#vehicle-${pk}`).className = ""
+        targetarrival.querySelector(`#vehicle-${pk}`).className = "vehicle"
       }
     }
 
-    //and then, finally, sort the table.
-    sortTable(targetarrival.parentNode)
-          
+    checkifallin(targetarrival)
+    populatearrivalsummary()
+       
   })
+}
+
+function checkifallin(element) {
+  let partylist = element.querySelector(".partylist")
+  let partymembers = partylist.children
+  let checkedin = true
+  for (let i = 0; i < partymembers.length; i++) {
+    if (!(partymembers[i].classList.contains("checkedin"))) {
+      checkedin = false
+    }
+  }
+  if (checkedin === true) {
+    element.className = "table-success"
+  }
+  else {
+    element.className = ""
+  }
+  
 }
 
 
 function choosearrivalday(element) {
   element.form.submit()
 }
+
+function checktableonload() {
+  duetable = document.querySelector("#duetable")
+  arrivals = duetable.children
+  for (let i = 0; i < arrivals.length; i++) {
+    checkifallin(arrivals[i])
+  }
+}
+
+function populatearrivalsummary() {
+  
+  checkedinvehiclecount = 0
+  checkedinpersoncount = 0
+
+  allduevehicles = document.querySelectorAll(".vehicle")
+  console.log(allduevehicles)
+  allduepeople = document.querySelectorAll(".person")
+  console.log(allduepeople)
+
+
+  allduevehiclescount = allduevehicles.length
+  allduepeoplecount = allduepeople.length
+  
+  allduevehicles.forEach((vehicle) => {
+    if (vehicle.classList.contains("checkedin")) {
+      checkedinvehiclecount++
+    }
+  })
+
+  allduepeople.forEach((person) => {
+    if (person.classList.contains("checkedin")) {
+      checkedinpersoncount++
+    }
+  })
+
+  console.log(checkedinvehiclecount)
+  console.log(checkedinpersoncount)
+
+  document.querySelector("#totalvehiclecount").textContent = allduevehiclescount
+  document.querySelector("#invehiclecount").textContent = checkedinvehiclecount
+  document.querySelector("#duevehiclecount").textContent = allduevehiclescount - checkedinvehiclecount
+  document.querySelector("#totalpersoncount").textContent = allduepeoplecount
+  document.querySelector("#inpersoncount").textContent = checkedinpersoncount
+  document.querySelector("#duepersoncount").textContent = allduepeoplecount - checkedinpersoncount
+
+}
+
+function loadfunction() {
+  checktableonload()
+  populatearrivalsummary()
+}
+
+document.addEventListener("DOMContentLoaded", loadfunction) 
+

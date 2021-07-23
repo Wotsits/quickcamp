@@ -6,19 +6,47 @@
 
     
     <div class="wrapper" id="arrivalswrapper">
-        {% now "DATE_FORMAT" as today_date %}
         
         <form id="datepicker">
             <input type="date" onChange=choosearrivalday(this) id="arrivaldate" class="form-control" name="startdate"></input>
         </form>
     
         <input type="text" class="form-control" id="arrivalssearch" onkeyup=arrivalsfilter() autofocus placeholder="Arrivals filter"></input>
-        <h4>Due Arrivals</h4>
-        <table id="duetablefull" class="table table-striped">
+        
+        <h4>Summary</h4> 
+        <table class="table table-striped">
+            <thead>
+                <th>Item</th>
+                <th>Total</th>
+                <th>In</th>
+                <th>Due</th>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>People</td>
+                    <td id="totalpersoncount"></td>
+                    <td id="inpersoncount"></td>
+                    <td id="duepersoncount"></td>
+                </tr>
+                <tr>
+                    <td>Vehicles</td>
+                    <td id="totalvehiclecount"></td>
+                    <td id="invehiclecount"></td>
+                    <td id="duevehiclecount"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h4>Due Arrivals</h4> 
+        
+        <table id="duetablefull" class="table table-responsive table-hover">
             <thead>
                 <th>Surname</th>
-                <th>Departure</th>
+                
                 <th>Pitch</th>
+                <th>Balance</th>
                 <th>Party Members</th>
                 <th>Vehicle Reg</th>
             </thead>
@@ -27,86 +55,24 @@
                     <td colspan="5">There are no due arrivals</td>
                 {% endif %}
                 {% for arrival in duearrivals %}
-                    {% if not arrival.balance == 0 %}
-                        <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable overdue disolvable arrival">
-                    {% else %}
-                        <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable arrival">
-                    {% endif %}
-                        
-                            <td>{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
-                            <td>{{arrival.end}}</td>
-                            <td>{{arrival.pitch.name}}</td>
-                            <td>
-                                {% for member in arrival.bookingparty.all %}
-                                    {% if member.start|date == today_date %}    
-                                        {% if member.checkedin %}    
-                                            <p id="guest-{{member.id}}" class="checkedin">
-                                                {% if member.type == "Adult"%}
-                                                    <i class="fas fa-male"></i>
-                                                {% elif member.type == "Child" %}
-                                                    <i class="fas fa-child"></i>
-                                                {% else %}
-                                                    <i class="fas fa-baby"></i>
-                                                {% endif %}
-                                                {{member.firstname}} {{member.surname}}</p>
-                                        {% else %}
-                                            <p id="guest-{{member.id}}">
-                                                {% if member.type == "Adult"%}
-                                                    <i class="fas fa-male"></i>
-                                                {% elif member.type == "Child" %}
-                                                    <i class="fas fa-child"></i>
-                                                {% else %}
-                                                    <i class="fas fa-baby"></i>
-                                                {% endif %}
-                                                {{member.firstname}} {{member.surname}}</p>
-                                        {% endif %}
-                                    
-                                    {% endif %}
-                                    
-                                {% endfor %}
-                            </td>
-                            <td> 
-                                {% for vehicle in arrival.bookingvehicles.all %} 
-                                    {% if vehicle.start|date == today_date %} 
-                                        {% if not vehicle.noshow %}
-                                            {% if vehicle.checkedin %}
-                                                <p id="vehicle-{{vehicle.id}}" class="checkedin">{{vehicle.vehiclereg}}</p>
-                                            {% else %}
-                                                <p id="vehicle-{{vehicle.id}}">{{vehicle.vehiclereg}}</p>
-                                            {% endif %}
-                                        {% endif %}
-                                    {% endif %}
-                                {% endfor %}
-                                
-                            </td>
-                        </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-            
-        <h4>Arrived</h4>
-        <table class="table table-striped">
-            <thead>
-                <th>Surname</th>
-                <th>Departure</th>
-                <th>Pitch</th>
-                <th>Party Members</th>
-                <th>Vehicle Reg</th>
-            </thead>
-            <tbody id="arrivedtable">
-                {% if checkedinarrivals|length == 0 %}
-                    <td colspan="5">There are no checked-in arrivals</td>
-                {% endif %}
-                {% for arrival in checkedinarrivals %}
                     <tr id="arrival-{{arrival.id}}" data-surname="{{arrival.guest.surname}}" onclick=displaycheckinpane({{arrival.id}}) class="clickable disolvable arrival">
+                    
+                        
                         <td>{{arrival.guest.surname}}, {{arrival.guest.firstname}}</td>
-                        <td>{{arrival.end}}</td>
                         <td>{{arrival.pitch.name}}</td>
-                        <td>
+                        
+                        {% if arrival.balance > 0 %}
+                            <td style="color:red;">£{{arrival.balance|floatformat:2}}</td>
+                        {% else %}
+                            <td style="color:green;">£{{arrival.balance|floatformat:2}}</td>
+                        {% endif %}
+
+                        <td class="partylist">
                             {% for member in arrival.bookingparty.all %}
-                                {% if member.start|date == today_date %}  
+                                
+                                {% if member.start|date:"Y-m-d" == arrivaldate %}    
                                     {% if member.checkedin %}    
-                                        <p id="guest-{{member.id}}" class="checkedin">
+                                        <p id="guest-{{member.id}}" class="person checkedin">
                                             {% if member.type == "Adult"%}
                                                 <i class="fas fa-male"></i>
                                             {% elif member.type == "Child" %}
@@ -116,7 +82,7 @@
                                             {% endif %}
                                             {{member.firstname}} {{member.surname}}</p>
                                     {% else %}
-                                        <p id="guest-{{member.id}}">
+                                        <p id="guest-{{member.id}}" class="person">
                                             {% if member.type == "Adult"%}
                                                 <i class="fas fa-male"></i>
                                             {% elif member.type == "Child" %}
@@ -126,26 +92,30 @@
                                             {% endif %}
                                             {{member.firstname}} {{member.surname}}</p>
                                     {% endif %}
+                                
                                 {% endif %}
+                                
                             {% endfor %}
                         </td>
-                        <td>
+                        <td class="partyvehicles"> 
                             {% for vehicle in arrival.bookingvehicles.all %} 
-                                {% if vehicle.start|date == today_date %}  
+                                {% if vehicle.start|date:"Y-m-d" == arrivaldate %} 
                                     {% if not vehicle.noshow %}
                                         {% if vehicle.checkedin %}
-                                            <p id="vehicle-{{vehicle.id}}" class="checkedin">{{vehicle.vehiclereg}}</p>
+                                            <p id="vehicle-{{vehicle.id}}" class="vehicle checkedin">{{vehicle.vehiclereg}}</p>
                                         {% else %}
-                                            <p id="vehicle-{{vehicle.id}}">{{vehicle.vehiclereg}}</p>
+                                            <p id="vehicle-{{vehicle.id}}" class="vehicle">{{vehicle.vehiclereg}}</p>
                                         {% endif %}
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
+                            
                         </td>
                     </tr>
-                {%endfor%}
+                {% endfor %}
             </tbody>
         </table>
+            
     </div>
     <script src="{% static '/js/arrivals.js' %}"></script>
 {% endblock %}

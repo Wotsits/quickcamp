@@ -304,7 +304,7 @@ function fetchbookings() {
                 if (elementdate >= bookingstart && elementdate < bookingend) {
  
                     // style the booking alerts into the calendar
-                    if (balance !== 0.00) {
+                    if (balance > 0.00) {
                         element.classList.add("balancedue")
                     }
                     else if (checkedin) {

@@ -76,7 +76,6 @@ class Booking(models.Model):
     totalpayments = models.FloatField()
     balance = models.FloatField()
     checkedin = models.BooleanField(default=False)
-    eta = models.TimeField(blank=True, null=True)
     locked = models.BooleanField(default=False)
 
     def __str__(self):
@@ -89,6 +88,8 @@ class PartyVehicle(models.Model):
     end = models.DateField()
     checkedin = models.BooleanField(default=False)
     noshow = models.BooleanField(default=False)
+    eta = models.TimeField(blank=True, null=True)
+
 
     def __str__(self):
         return f'{self.vehiclereg} on Booking {self.booking.id}'
