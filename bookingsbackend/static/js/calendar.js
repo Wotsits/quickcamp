@@ -333,7 +333,7 @@ function fetchbookings() {
                         if (locked) {
                             element.innerHTML = `<p><i class="fas fa-lock"></i> ${data[i].guest.surname}</p>`
                         } else {
-                            element.innerHTML = `<p>${data[i].guest.surname}</p>`
+                            element.innerHTML = `${data[i].guest.surname}</p>`
                         }
                     }
                     element.classList.add('clickable')
@@ -763,9 +763,12 @@ function displaybookingpane(bookingid) {
             document.querySelector(".panepartydetail").classList.add("checkedin")
         }
 
+        let bookingpanetitle = document.querySelector("#bookingpanetitle")
         if (locked) {
-            let bookingpanetitle = document.querySelector("#bookingpanetitle")
-            bookingpanetitle.innerHTML = bookingpanetitle.innerHTML + " <i class='fas fa-lock'></i>"
+            bookingpanetitle.innerHTML = bookingpanetitle.innerHTML + ` <i onclick="unlock(${bookingid})" class='fas fa-lock'></i>`
+        }
+        else {
+            bookingpanetitle.innerHTML = bookingpanetitle.innerHTML + ` <i onclick="lock(${bookingid})" class='fas fa-lock-open'></i>`
         }
 
         // grab the comments div in the booking pane for update.
@@ -1353,7 +1356,7 @@ let preferredpitch = 0
 
 function launchcreatenewbooking(element) {
     
-    preferredpitch = element.getAttribute("data-pitch")
+    let preferredpitch = element.getAttribute("data-pitch")
     let start = element.getAttribute("data-date")
     start = new Date(parseInt(start))
     start = start.toISOString().substring(0, 10)
@@ -1389,7 +1392,7 @@ function launchcreatenewbooking(element) {
             <h5>Unit</h5>
             <div id="unitselect" class="optionselect">
                 
-                <input type="radio" class="btn-check" name="unit-select" id="van" autocomplete="off" value="van" onchange=resetavailablepitches(${preferredpitch})>
+                <input type="radio" class="btn-check" name="unit-select" id="van" autocomplete="off" value="van" onchange=resetavailablepitches(${preferredpitch}) required>
                 <label class="btn btn-outline-success unitselectbutton" for="van"><i class="fas fa-shuttle-van large"></i></label>
 
                 <input type="radio" class="btn-check" name="unit-select" id="caravan" autocomplete="off" value="caravan" onchange=resetavailablepitches(${preferredpitch})>
@@ -1405,7 +1408,7 @@ function launchcreatenewbooking(element) {
 
             <div id="sizeselect" class="optionselect">
             
-                <input type="radio" class="btn-check" name="size-select" id="large" autocomplete="off" value="large" onchange=resetavailablepitches(${preferredpitch})>
+                <input type="radio" class="btn-check" name="size-select" id="large" autocomplete="off" value="large" onchange=resetavailablepitches(${preferredpitch}) required>
                 <label class="btn btn-outline-secondary unitselectbutton" for="large">Large</label>
 
                 <input type="radio" class="btn-check" name="size-select" id="small" autocomplete="off" value="small" onchange=resetavailablepitches(${preferredpitch})>
@@ -1428,19 +1431,19 @@ function launchcreatenewbooking(element) {
             <div class="row">
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input type="date" class="form-control" id="arrival" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Arrival Date" value="${start}">
+                        <input type="date" class="form-control" id="arrival" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Arrival Date" value="${start}" required>
                         <label for="arrival">Arrival Date: </label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input type="date" class="form-control" id="departure" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Departure Date">
+                        <input type="date" class="form-control" id="departure" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Departure Date" required>
                         <label for="departure">Departure Date: </label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <select name="pitch" class="form-control" id="pitchselect">
+                        <select name="pitch" class="form-control" id="pitchselect" required>
                             <!-- options populate here -->
                         </select>
                         <label for="arrival">Pitch: </label>
@@ -1454,19 +1457,19 @@ function launchcreatenewbooking(element) {
             <div class="row">
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="adultno" placeholder="Adults">
+                        <input onchange=recalculate() class="form-control" type="text" id="adultno" placeholder="Adults" required>
                         <label for="adultno">Adults</label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="childno" placeholder="Children">
+                        <input onchange=recalculate() class="form-control" type="text" id="childno" placeholder="Children" required>
                         <label for="childno">Children</label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="infantno" placeholder="Infants">
+                        <input onchange=recalculate() class="form-control" type="text" id="infantno" placeholder="Infants" required>
                         <label for="infantno">Infants</label>
                     </div>
                 </div>
@@ -1475,13 +1478,13 @@ function launchcreatenewbooking(element) {
             <div class="row">
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="petno" placeholder="Pets">
+                        <input onchange=recalculate() class="form-control" type="text" id="petno" placeholder="Pets" required>
                         <label for="petno">Pets</label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="vehicleno" placeholder="vehicle">
+                        <input onchange=recalculate() class="form-control" type="text" id="vehicleno" placeholder="vehicle" required>
                         <label for="vehicleno">Vehicles</label>
                     </div>
                 </div>
@@ -1505,7 +1508,7 @@ function launchcreatenewbooking(element) {
             <div class="row">
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input type=number class="form-control" step="0.01" min=0 id="paid" placeholder="Paid">
+                        <input type=number class="form-control" step="0.01" min=0 id="paid" placeholder="Paid" required>
                         <label for="paid"> Paid £</label>
                     </div>
                 </div>
@@ -1521,7 +1524,7 @@ function launchcreatenewbooking(element) {
                 </div>
             </div>
 
-            <button class="btn btn-secondary" onclick=createnewbooking()>Submit</button>
+            <button id="submitnewbookingbutton" class="btn btn-secondary" onclick=createnewbooking() disabled>Submit</button>
         
         </form>
         `
@@ -1618,6 +1621,7 @@ function selectguest(element) {
             </div>
             `
         document.querySelector('#guestsearch').remove()
+        document.querySelector('#submitnewbookingbutton').removeAttribute("disabled")
     })
 }
 
