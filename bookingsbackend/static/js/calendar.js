@@ -4,6 +4,8 @@ JS for calendar.html
 
 //////////////////////// HELPER FUNCTION
 
+"use strict"
+
 function rfc3339(d) {
     
     function pad(n) {
@@ -11,7 +13,7 @@ function rfc3339(d) {
     }
 
     function timezoneOffset(offset) {
-        var sign;
+        let sign;
         if (offset === 0) {
             return "Z";
         }
@@ -43,6 +45,7 @@ const queryString = window.location.search
 // grab the searchparams from the querystring
 const urlParams = new URLSearchParams(queryString)
 // set today variable to either today or the startdate url get param. 
+let today
 if (urlParams.get("startdate")) {
     today = new Date(urlParams.get("startdate"))
 } else {
@@ -191,7 +194,7 @@ async function setupcalendarrowtitles() {
         pitchtitle.innerHTML = `Pitch ${pitcharray[i].name}`
 
         //find the target div
-        targetdiv = null 
+        let targetdiv = null 
         while (targetdiv === null) {  //whilst we've not already got the target div
             pitchholders.forEach((element) => { //check each pitchtypediv
                 if (parseInt(element.dataset.id) === pitcharray[i].type) { ///for a match with the pitch.type
@@ -250,7 +253,7 @@ function setupcalendarbody() {
         }
 
         //find the target div
-        targetdiv = null 
+        let targetdiv = null 
         while (targetdiv === null) {  //whilst we've not already got the target div
             pitchholders.forEach((element) => { //check each pitchtypediv
                 if (parseInt(element.dataset.id) === pitcharray[i].type) { ///for a match with the pitch.type
@@ -380,7 +383,7 @@ const controlpanel = document.querySelector("#controlpanel")
 function selectbooking(bookingid) {
     
     // grabs each pitch-day from calendar
-    bookingblocksoncalendar = document.querySelectorAll(".calendarbodyitem")
+    let bookingblocksoncalendar = document.querySelectorAll(".calendarbodyitem")
 
     // conditional first checks if a different booking is already selected
     if ((!(selectedbooking === bookingid)) && selectstate === true) {
@@ -490,12 +493,12 @@ function movebooking(bookingid) {
 // this function loads earlier dates. Called by infinite scroll functionality.
 function loadbackward() {
     // grabs the first date in the datearray
-    firstDateRendered = datearray[0]
+    let firstDateRendered = datearray[0]
     // sets it to midnight.
     firstDateRendered.setUTCHours(0, 0, 0, 0)
     // initialises an array to store the forward dates and populates it.  
     let forwardDates = []
-    for (i=-7; i<0; i++) {
+    for (let i = -7; i < 0; i++) {
         forwardDates.push(new Date(Date.parse(firstDateRendered)+(i*millisecondsinaday)))
     }
     
@@ -519,7 +522,7 @@ function loadbackward() {
         //if header row...
         if (element.getAttribute("id") == "calendarheaderright") {
             //create the divs and populate with the date string
-            for (j=6; j>=0; j--) {
+            for (let j = 6; j >= 0; j--) {
                 let calendaritem = document.createElement('div')
                 calendaritem.className = "calendaritem"
                 calendaritem.innerHTML = `<p>${forwardDates[j].toDateString()}</p>`
@@ -530,7 +533,7 @@ function loadbackward() {
         //if not the header row...
         else {
             //create the divs and set the pitch, date and onclick attributes
-            for (j=6; j>=0; j--) {
+            for (let j = 6; j >= 0; j--) {
                 let calendaritem = document.createElement('div')
                 calendaritem.className = "calendaritem calendarbodyitem"
                 calendaritem.setAttribute("data-pitch", pitchid)
@@ -746,13 +749,13 @@ function displaybookingpane(bookingid) {
         }
 
         // add event listener to load comments button and pass in the comments. 
-        loadcommentsbutton = document.querySelector("#loadcommentsbutton")
+        let loadcommentsbutton = document.querySelector("#loadcommentsbutton")
         loadcommentsbutton.addEventListener("click", () => {
             loadcomments(bookingid, comments)
         })
 
         // add event listener to load party button and pass in the party details.         
-        loadpartybutton = document.querySelector("#loadpartybutton")
+        let loadpartybutton = document.querySelector("#loadpartybutton")
         loadpartybutton.addEventListener("click", () => {
             loadparty(arrival, departure, bookingparty, bookingpets, bookingvehicles, bookingid)
         })
@@ -772,11 +775,11 @@ function displaybookingpane(bookingid) {
         }
 
         // grab the comments div in the booking pane for update.
-        importantbookingcommentsdiv = document.querySelector("#importantbookingcomments")
+        let importantbookingcommentsdiv = document.querySelector("#importantbookingcomments")
         // check whether any of the booking comments are flagged as important
-        for (i=0; i<comments.length; i++) {
+        for (let i=0; i<comments.length; i++) {
             if (comments[i].important) {
-                comment = document.createElement("p")
+                let comment = document.createElement("p")
                 comment.textContent = `${comments[i].comment}`
                 comment.className = "alert alert-danger"
                 importantbookingcommentsdiv.append(comment)
@@ -810,8 +813,8 @@ function loadcomments(bookingid, comments) {
     }
     // otherwise, populate with the booking comments. 
     else {
-        for (i=0; i<comments.length; i++) {
-            commentitem = document.createElement("div")
+        for (let i=0; i<comments.length; i++) {
+            let commentitem = document.createElement("div")
             commentitem.textContent = `${comments[i].comment}`
             commentitem.setAttribute("role", "alert")
             if (comments[i].important) {
@@ -850,10 +853,10 @@ function addcomment(bookingid, comments) {
 }
 
 function createnewcomment(bookingid) {
-    newcomment = document.querySelector("#newcommenttextarea").value
-    importantstatus = document.querySelector("#importantstatus").checked
+    let newcomment = document.querySelector("#newcommenttextarea").value
+    let importantstatus = document.querySelector("#importantstatus").checked
     
-    payload = {
+    let payload = {
         "bookingid": bookingid,
         "comment": newcomment,
         "important": importantstatus
@@ -963,7 +966,7 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
     // populate the pane with party members. 
     else {
         // for each person in the booking party, create a table row.
-        for (i=0; i<bookingparty.length; i++) {
+        for (let i=0; i<bookingparty.length; i++) {
             let partyitem = document.createElement("tr")
             // populate that row with <td> fields showing the party member details.  
             partyitem.innerHTML = `
@@ -1001,7 +1004,7 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
             let typeselect = partyitem.querySelector("#typeselect")
             
             // for each item in the typeselect options (3), check whether the textContent attribute matches the bookingparty.type and if so, set to selected
-            for (j=0; j<typeselect.length; j++) {
+            for (let j=0; j<typeselect.length; j++) {
                 if (typeselect.options[j].textContent === `${bookingparty[i].type}`) {
                     typeselect.options[j].setAttribute("selected", true)
                 }
@@ -1013,15 +1016,15 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
     
     // catch booking with no party vehicles
     if (bookingpets.length === 0) {
-        partyitem = document.createElement("tr")
+        let partyitem = document.createElement("tr")
         partyitem.textContent = "There are no pets associated with this booking."
         petsdetailstablebody.append(partyitem)
     }
 
     // populate pane with party pets
     else {
-        for (i=0; i<bookingpets.length; i++) {
-            partyitem = document.createElement("tr")
+        for (let i=0; i<bookingpets.length; i++) {
+            let partyitem = document.createElement("tr")
             partyitem.innerHTML = `
                 <td><input data-id="${bookingpets[i].id}" data-type="pet" data-attribute="name" type="text" class="form-control" value="${bookingpets[i].name}"/></td>
                 <td><input data-id="${bookingpets[i].id}" data-type="pet" data-attribute="start" type="date" class="form-control" value="${bookingpets[i].start}"/></td>
@@ -1040,15 +1043,15 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
     
     // catch booking with no party vehicles
     if (bookingvehicles.length === 0) {
-        partyitem = document.createElement("tr")
+        let partyitem = document.createElement("tr")
         partyitem.textContent = "There are no party vehicles associated with this booking."
         vehiclesdetailstablebody.append(partyitem)
     }
 
     // populate pane with party vehicles
     else {
-        for (i=0; i<bookingvehicles.length; i++) {
-            partyitem = document.createElement("tr")
+        for (let i=0; i<bookingvehicles.length; i++) {
+            let partyitem = document.createElement("tr")
             partyitem.innerHTML = `
                 <td><input data-id="${bookingvehicles[i].id}" data-type="vehicle" data-attribute="vehiclereg" type="text" class="form-control" value="${bookingvehicles[i].vehiclereg}"/></td>
                 <td><input data-id="${bookingvehicles[i].id}" data-type="vehicle" data-attribute="start" type="date" class="form-control" value="${bookingvehicles[i].start}"/></td>
@@ -1089,9 +1092,9 @@ function addpartyitem(element, bookingid) {
     
     startloadspinner()
     
-    itemtypetobeadded = element.dataset.type
+    let itemtypetobeadded = element.dataset.type
 
-    payload = {
+    let payload = {
         "bookingid"       : bookingid,
         "itemtype"        : itemtypetobeadded,
     }
@@ -1118,8 +1121,8 @@ function addpartyitem(element, bookingid) {
 
     .then(data => {
         
-        bookingstart = data[0].fields.start
-        bookingend = data[0].fields.end
+        let bookingstart = data[0].fields.start
+        let bookingend = data[0].fields.end
 
         let newrow = document.querySelector("tr")
         let targetdiv = ""
@@ -1187,7 +1190,7 @@ function addpartyitem(element, bookingid) {
 // called when focus is removed from a input field in the party detail pane.  
 function updatepartyitem(element, bookingid) {
     
-    payload = {
+    let payload = {
         "bookingid"       : bookingid,
         "itemid"          : element.dataset.id,
         "itemtype"        : element.dataset.type,
@@ -1224,10 +1227,10 @@ function deletepartyitem(element) {
 
     startloadspinner()
 
-    itemid = element.dataset.id
-    itemtype = element.dataset.type
+    let itemid = element.dataset.id
+    let itemtype = element.dataset.type
 
-    payload = {
+    let payload = {
         "itemid": itemid,
         "itemtype": itemtype
     }
@@ -1259,8 +1262,8 @@ function deletepartyitem(element) {
 
 
 function deletepartymember(element) {
-    console.log(element)
-    payload = {
+
+    let payload = {
         "partymemberid": element.dataset.id
     }
 
@@ -1287,9 +1290,9 @@ function deletepartymember(element) {
 
 
 function updateGuest(bookingid) {
-    guestid = document.querySelector("#guestid").textContent
+    let guestid = document.querySelector("#guestid").textContent
     
-    payload = {
+    let payload = {
         "newguestid": guestid
     }
     
@@ -1317,9 +1320,9 @@ function updateGuest(bookingid) {
 }
 
 function updateStayDuration(bookingid) {
-    requestedduration = document.querySelector("#stayduration").value
+    let requestedduration = document.querySelector("#stayduration").value
     
-    payload = {
+    let payload = {
         "newduration": parseInt(requestedduration)
     }
     
@@ -1541,7 +1544,7 @@ function launchcreatenewbooking(element) {
     .then(data => {
         
         for (let i=0; i<data.length; i++) {
-            rateoptionbutton = document.createElement("input")
+            let rateoptionbutton = document.createElement("input")
             rateoptionbutton.type = "radio"
             rateoptionbutton.className = "btn-check"
             rateoptionbutton.name = "rate-options"
@@ -1555,7 +1558,7 @@ function launchcreatenewbooking(element) {
                 rateoptionbutton.checked = true
             }
             
-            rateoptionbuttonlabel = document.createElement("label")
+            let rateoptionbuttonlabel = document.createElement("label")
             rateoptionbuttonlabel.className = "btn btn-outline-success" 
             rateoptionbuttonlabel.htmlFor = `${data[i].name}`
             rateoptionbuttonlabel.textContent = `${data[i].name}`
@@ -1572,25 +1575,25 @@ function setrate(button) {
 }
 
 function guestsearch(element) {
-    searchresultsdiv = document.querySelector('#searchresultsdiv')
+    let searchresultsdiv = document.querySelector('#searchresultsdiv')
     searchresultsdiv.innerHTML = ""
-    searchparam = element.value
-    console.log(searchparam)
+    let searchparam = element.value
     if (searchparam.length == 0) {
         return
     }
+
     fetch(`guestsearch?search=${searchparam}`)
     .then(response => response.json())
     .then(data => {
         if (data.length > 0) {
-            for (i=0; i < data.length; i++) {
-                result = document.createElement('div')
+            for (let i=0; i < data.length; i++) {
+                let result = document.createElement('div')
                 result.innerHTML = `<p data-id="${data[i].id}" onclick=selectguest(this)>${data[i].firstname} ${data[i].surname} - ${data[i].email}</p>`
                 searchresultsdiv.append(result)
             }
         }
         else {
-            result = document.createElement('div')
+            let result = document.createElement('div')
             result.innerHTML = `<p onclick=createnewguestform()>No existing guests found.  Click here to create one.</p>`
             searchresultsdiv.append(result)
         }
@@ -1600,8 +1603,8 @@ function guestsearch(element) {
 }
 
 function selectguest(element) {
-    customerid = element.getAttribute("data-id")
-    guestdetails = document.querySelector('#guestselect')
+    let customerid = element.getAttribute("data-id")
+    let guestdetails = document.querySelector('#guestselect')
     guestdetails.innerHTML = ""
 
     fetch(`guest/${customerid}`)
@@ -1628,8 +1631,8 @@ function selectguest(element) {
 
 //launches and populates the create new guest element of the form
 function createnewguestform() {
-    guestemail = document.querySelector('#searchparam').value
-    guestdetails = document.querySelector('#guestselect')
+    let guestemail = document.querySelector('#searchparam').value
+    let guestdetails = document.querySelector('#guestselect')
     guestdetails.innerHTML = `
         <h8>Create New Lead Guest</h8>
         <div class="row">
@@ -1667,10 +1670,10 @@ function createnewguestform() {
 
 //sends the new guest creation POST request to the server
 function createguest() {
-    firstname = document.querySelector('#firstname').value
-    surname = document.querySelector('#surname').value
-    telephone = document.querySelector('#telephone').value
-    email = document.querySelector('#email').value
+    let firstname = document.querySelector('#firstname').value
+    let surname = document.querySelector('#surname').value
+    let telephone = document.querySelector('#telephone').value
+    let email = document.querySelector('#email').value
 
     const payload = {
         'firstname': firstname,
@@ -1721,8 +1724,8 @@ function resetavailablepitches(preferredpitch) {
         }
     })
     
-    ehu     = document.querySelector('#elec-select').checked
-    awning  = document.querySelector('#awning-select').checked
+    let ehu     = document.querySelector('#elec-select').checked
+    let awning  = document.querySelector('#awning-select').checked
     
     fetch(`serveavailablepitchlist?start=${start}&&end=${end}&&unit=${unit}&&size=${size}&&ehu=${ehu}&&awning=${awning}`)
     .then(response => response.json())
@@ -1791,13 +1794,13 @@ function createnewbooking() {
 function recalculate() {
 
     //obtain the necessary info from new booking form for rates query
-    bookingstart        = document.querySelector("#arrival").value
-    bookingend          = document.querySelector("#departure").value
-    adultno             = document.querySelector("#adultno").value
-    childno             = document.querySelector("#childno").value
-    infantno            = document.querySelector("#infantno").value
-    petno               = document.querySelector("#petno").value
-    vehicleno           = document.querySelector("#vehicleno").value
+    let bookingstart        = document.querySelector("#arrival").value
+    let bookingend          = document.querySelector("#departure").value
+    let adultno             = document.querySelector("#adultno").value
+    let childno             = document.querySelector("#childno").value
+    let infantno            = document.querySelector("#infantno").value
+    let petno               = document.querySelector("#petno").value
+    let vehicleno           = document.querySelector("#vehicleno").value
     
     // wait until all the required info is present before presenting to the server for rate.
     if (bookingstart && bookingend && adultno && childno && infantno && petno && vehicleno) {
@@ -1808,22 +1811,21 @@ function recalculate() {
         .then(response => response.json())
         .then(data => {
             
-            console.log(data)
             //initialize a new variable to hold the rates array for the dates selected (dict type)
             let rates = {}
             
             //data returned from server may include more than one rate record, therefore the following is done for each rate record returned, effectively merging the returned rates into one data structure 
             for (let i=0; i < data.length; i++) {
                 //get the start of the rates period
-                ratestartdate = new Date(data[i].fields.start)
+                let ratestartdate = new Date(data[i].fields.start)
                 //get the end of the rates period
-                rateenddate = new Date(data[i].fields.end)
+                let rateenddate = new Date(data[i].fields.end)
                 //get the pax rates for that period.
-                adultrate = data[i].fields.adult
-                childrate = data[i].fields.child
-                infantrate = data[i].fields.infant
-                petrate = data[i].fields.pet
-                vehiclerate = data[i].fields.vehicle
+                let adultrate = data[i].fields.adult
+                let childrate = data[i].fields.child
+                let infantrate = data[i].fields.infant
+                let petrate = data[i].fields.pet
+                let vehiclerate = data[i].fields.vehicle
                 
                 /*
                 the following loop creates a JS object in the form of a Dict.  Structure is as follows:
@@ -1837,7 +1839,7 @@ function recalculate() {
                     ...
                 */
                 for (let date=ratestartdate; date<rateenddate; date.setDate(date.getDate() + 1)) { //the incrementer increases the date by one
-                    formatteddate = date.toDateString()
+                    let formatteddate = date.toDateString()
                     rates[formatteddate] = {
                         "adult": adultrate,
                         "child": childrate,
@@ -1880,17 +1882,17 @@ function loadpaymentdetail(bookingid) {
     fetch(`servepaymentinfo/${bookingid}`)
     .then(response => response.json())
     .then(data => {
-        paymentdetailslayer = document.createElement("div")
+        let paymentdetailslayer = document.createElement("div")
         paymentdetailslayer.className = "panewrapper"
         paymentdetailslayer.id = "paymentdetailswrapper"
 
-        paymentdetails = document.createElement("div")
+        let paymentdetails = document.createElement("div")
         paymentdetails.className = "paymentdetails"
         paymentdetails.innerHTML = `<p class="closebutton" ><i class="far fa-times-circle" onclick=closepane(paymentdetailswrapper)></i></p><h2>Payment Details</h2><i onclick=addpayment(${bookingid}) class="fas fa-plus-circle"></i>`
         
-        paymentdetailstable = document.createElement("table")
+        let paymentdetailstable = document.createElement("table")
         paymentdetailstable.className = "table table-striped"
-        paymentdetailstableheader = document.createElement("thead")
+        let paymentdetailstableheader = document.createElement("thead")
         paymentdetailstableheader.innerHTML = `
             <th>Payment Date</th>
             <th>Payment ID</th>
@@ -1899,10 +1901,11 @@ function loadpaymentdetail(bookingid) {
             <th>Delete or Edit Payment</th>
             `
         
-        paymentdetailstablebody = document.createElement("tbody")
+        let paymentdetailstablebody = document.createElement("tbody")
         paymentdetailstablebody.id = "paymenttablebody"
-        for (i=0; i<data.length; i++) {
-            payment = document.createElement("tr")
+        
+        for (let i=0; i<data.length; i++) {
+            let payment = document.createElement("tr")
             payment.setAttribute("id", `payment-${data[i].id}`)
             payment.className = "individualpayment"
             paymentcreationdate = new Date(data[i].creationdate)
@@ -1926,7 +1929,7 @@ function loadpaymentdetail(bookingid) {
 }
 
 function editpayment(paymentcreationdate, paymentid, paymentvalue, paymentmethod, bookingid) {
-    payment = document.querySelector(`#payment-${paymentid}`)
+    let payment = document.querySelector(`#payment-${paymentid}`)
     payment.innerHTML = `
         <td><input type="date" name="paymentdate" id="editedpaymentdate" value=${paymentcreationdate}></input></td>
         <td>${paymentid}</td>
@@ -1943,11 +1946,11 @@ function editpayment(paymentcreationdate, paymentid, paymentvalue, paymentmethod
 }
 
 function savepayment(paymentid, bookingid) {
-    editedpaymentdate = document.querySelector("#editedpaymentdate").value
-    editedpaymentvalue = document.querySelector("#editedpaymentvalue").value
-    editedpaymentmethod = document.querySelector("#editedpaymentmethod").value
+    let editedpaymentdate = document.querySelector("#editedpaymentdate").value
+    let editedpaymentvalue = document.querySelector("#editedpaymentvalue").value
+    let editedpaymentmethod = document.querySelector("#editedpaymentmethod").value
     
-    payload = {
+    let payload = {
         "pk": paymentid,
         "creationdate": editedpaymentdate,
         "value": editedpaymentvalue,
@@ -1993,7 +1996,7 @@ function deletepayment(paymentid, bookingid) {
 }
 
 function addpayment(bookingid) {
-    newpaymentline = document.createElement("tr")
+    let newpaymentline = document.createElement("tr")
     newpaymentline.setAttribute("id", "newpaymentline")
     newpaymentline.innerHTML = `
         <td><input type="date" id="newpaymentdate"></input></td>
@@ -2008,17 +2011,17 @@ function addpayment(bookingid) {
         </td>
         <td><i onclick=savenewpayment(${bookingid}) class="fas fa-save"></i> Click here to save payment</td>
         `
-    table = document.querySelector("#paymenttablebody")
+    let table = document.querySelector("#paymenttablebody")
     table.append(newpaymentline)
     document.querySelector("#newpaymentdate").valueAsDate = new Date() 
 }
 
 function savenewpayment(bookingid) {
-    newpaymentdate = document.querySelector("#newpaymentdate").value
-    newpaymentvalue = document.querySelector("#newpaymentvalue").value
-    newpaymentmethod = document.querySelector("#newpaymentmethod").value
+    let newpaymentdate = document.querySelector("#newpaymentdate").value
+    let newpaymentvalue = document.querySelector("#newpaymentvalue").value
+    let newpaymentmethod = document.querySelector("#newpaymentmethod").value
     
-    payload = {
+    let payload = {
         "bookingid": bookingid,
         "date": newpaymentdate,
         "value": newpaymentvalue,
@@ -2052,17 +2055,17 @@ function addextra(extras) {
     .then(response => response.json())
     .then(data => {
         //when the button is pressed, add a row to the extras table.
-        extrarow = document.createElement('tr')
+        let extrarow = document.createElement('tr')
         extrarow.setAttribute("id", "live")
-        extrasoptions = document.createElement("select")
-        for (i = 0; i < data.length; i++) {
-            option = document.createElement("option")
+        let extrasoptions = document.createElement("select")
+        for (let i = 0; i < data.length; i++) {
+            let option = document.createElement("option")
             option.innerHTML = data[i].fields.name
             option.value = data[i].fields.pk
             extrasoptions.append(option)
         }
         // add a 'placeholder' into the select options inviting the user to select an extra from the list. 
-        option = document.createElement("option")
+        let option = document.createElement("option")
         option.innerHTML = "Select an extra"
         option.setAttribute("hidden", true)
         option.setAttribute("selected", true)
@@ -2075,9 +2078,9 @@ function addextra(extras) {
             <td class='extracostbasis'>Cost Basis</td>
             <td class='extratotal'>Total</td>
         `
-        extratable = document.querySelector("#extratable")
+        let extratable = document.querySelector("#extratable")
         extratable.append(extrarow)
-        livetr = document.querySelector("#live")
+        let livetr = document.querySelector("#live")
         livetr.setAttribute("id", "")
         livetr.querySelector('.extraname').append(extrasoptions)
 
@@ -2085,8 +2088,8 @@ function addextra(extras) {
 }
 
 function repositioncalendar() {
-    repositiondate = document.querySelector('#startdate').value
-    window.location.href=`?startdate=${repositiondate}`
+    let repositiondate = document.querySelector('#startdate').value
+    window.location.href = `?startdate=${repositiondate}`
 }
 
 //this function reloads the whole calendar render when things have changed.  
