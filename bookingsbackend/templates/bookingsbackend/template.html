@@ -22,7 +22,11 @@
                     <li class="navitem"><a href='{% url "calendar" %}'>Calendar</a></li>
                     <li class="navitem"><a href='{% url "arrivals" %}'>Arrivals</a></li>
                     <li class="navitem"><a href='#'>Reports</a></li>
-                    <li class="navitem"><a href="{% url 'logout'%}"><img id="profilepic" src="{{user.profilepic}}"></a></li>
+                    {% if user.profilepic == "" %}
+                        <li class="navitem"><a href="{% url 'logout'%}"><img id="profilepic" src="https://cdn.business2community.com/wp-content/uploads/2017/08/blank-profile-picture-973460_640.png"></a></li>
+                    {% else %}
+                        <li class="navitem"><a href="{% url 'logout'%}"><img id="profilepic" src="{{user.profilepic}}"></a></li>
+                    {% endif %}
                 {% endif %}
             </ul>
         </nav>

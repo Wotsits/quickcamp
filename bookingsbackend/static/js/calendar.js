@@ -218,7 +218,7 @@ async function setupcalendarrowtitles() {
 function setupcalendarheader() {
     
     // for each day in the datearray...
-    for (let j = 0; j < datearray.length; j++) {
+    for (let j=0; j<datearray.length; j++) {
         // create a column header
         let headerday = document.createElement('div')
         headerday.className = "calendaritem"
@@ -443,12 +443,12 @@ function selectbooking(bookingid) {
 ////////////////////////// MOVE BOOKING FUNCTIONALITY
 
 function movebooking(bookingid) {
-    message = document.createElement("div")
+    let message = document.createElement("div")
     message.innerHTML = '<p class="message">Booking move in progress.  Select new start location</p>'
     controlpanel.append(message)
     // grab all the calendar day blocks and attach an event listener to each of them which will 
     // receive a click and indicate the desire start date.
-    bookingblocksoncalendar = document.querySelectorAll(".calendaritem")
+    let bookingblocksoncalendar = document.querySelectorAll(".calendaritem")
     bookingblocksoncalendar.forEach((element) => {
         // commit the existing onclick attribute to a dataset entry
         element.dataset.onclickattribute = element.getAttribute("onclick")
@@ -457,7 +457,7 @@ function movebooking(bookingid) {
         // add a new onclick event listener
         element.addEventListener("click", () => {
             // compile PATCH payload
-            payload = {
+            let payload = {
                 // from the clicked element, grab its date and pitch.
                 newstart: element.dataset.date,
                 newpitch: element.dataset.pitch
@@ -563,12 +563,12 @@ function loadbackward() {
 // this function loads later dates. Called by infinite scroll functionality.
 function loadforward() {
     // grabs the last date in the datearray
-    lastDateRendered = datearray[datearray.length - 1]
+    let lastDateRendered = datearray[datearray.length - 1]
     // sets it to midnight.
     lastDateRendered.setUTCHours(0, 0, 0, 0)
     // initialises an array to store the forward dates and populates it.  
     let forwardDates = []
-    for (i=1; i<8; i++) {
+    for (let i=1; i<8; i++) {
         forwardDates.push(new Date(Date.parse(lastDateRendered)+(i*millisecondsinaday)))
     }
     
@@ -579,13 +579,13 @@ function loadforward() {
     let calendarrows = document.querySelectorAll('.calendarrow')
     calendarrows.forEach(function(element) {
         //extract pitch ID from row
-        pitchid = element.dataset.pitch
+        let pitchid = element.dataset.pitch
         
         //render the additions to each calendar row
         //if header row...
         if (element.getAttribute("id") == "calendarheaderright") {
             //create the divs and populate with the date string
-            for (j=0; j<7; j++) {
+            for (let j=0; j<7; j++) {
                 let calendaritem = document.createElement('div')
                 calendaritem.className = "calendaritem"
                 calendaritem.innerHTML = `<p>${forwardDates[j].toDateString()}</p>`
@@ -596,7 +596,7 @@ function loadforward() {
         //if not the header row...
         else {
             //create the divs and set the pitch, date and onclick attributes
-            for (j=0; j<7; j++) {
+            for (let j=0; j<7; j++) {
                 let calendaritem = document.createElement('div')
                 calendaritem.className = "calendaritem calendarbodyitem"
                 calendaritem.setAttribute("data-pitch", pitchid)
@@ -1670,6 +1670,7 @@ function createnewguestform() {
 
 //sends the new guest creation POST request to the server
 function createguest() {
+    let guestdetails = document.querySelector('#guestselect')
     let firstname = document.querySelector('#firstname').value
     let surname = document.querySelector('#surname').value
     let telephone = document.querySelector('#telephone').value
@@ -1698,6 +1699,7 @@ function createguest() {
             <p><strong>Email: </strong>${data.email}</p>
             <p><strong>Telephone: </strong>${data.telephone}</p>
         `
+        document.querySelector('#submitnewbookingbutton').removeAttribute("disabled")
     })
 }
 
@@ -1908,7 +1910,7 @@ function loadpaymentdetail(bookingid) {
             let payment = document.createElement("tr")
             payment.setAttribute("id", `payment-${data[i].id}`)
             payment.className = "individualpayment"
-            paymentcreationdate = new Date(data[i].creationdate)
+            let paymentcreationdate = new Date(data[i].creationdate)
             payment.innerHTML = `
                 <td>${paymentcreationdate.toDateString()}</td>
                 <td>${data[i].id}</td>

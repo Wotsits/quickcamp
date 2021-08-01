@@ -18,7 +18,7 @@ class Site(models.Model):
         return f'{self.name}'
 
 class User(AbstractUser):
-    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, default=1)
     profilepic = models.URLField()
 
 
