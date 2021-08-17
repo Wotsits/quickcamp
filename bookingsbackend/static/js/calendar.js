@@ -4,35 +4,11 @@ JS for calendar.html
 
 //////////////////////// HELPER FUNCTION
 
-"use strict"
-
-function rfc3339(d) {
-    
-    function pad(n) {
-        return n < 10 ? "0" + n : n;
-    }
-
-    function timezoneOffset(offset) {
-        let sign;
-        if (offset === 0) {
-            return "Z";
-        }
-        sign = (offset > 0) ? "-" : "+";
-        offset = Math.abs(offset);
-        return sign + pad(Math.floor(offset / 60)) + ":" + pad(offset % 60);
-    }
-
-    return d.getFullYear() + "-" +
-        pad(d.getMonth() + 1) + "-" +
-        pad(d.getDate()) + "T" +
-        pad(d.getHours()) + ":" +
-        pad(d.getMinutes()) + ":" +
-        pad(d.getSeconds()) + 
-        timezoneOffset(d.getTimezoneOffset());
-}
+import {rfc3339, createNewElementCustom} from './helpers/helpers.js'
 
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
+"use strict"
 
 // Global variable initialisation for selectbooking() function
 let selectedbooking = ""
@@ -83,29 +59,12 @@ let pitcharray = []
 // initializes consts for calendar div and calendar body, used later.
 const calendar = document.querySelector('#calendar')
 
-const calendarleft = document.createElement('div')
-calendarleft.className = "calendarleft"
-calendarleft.id = "calendarleft"
-
-const calendarright = document.createElement('div')
-calendarright.className = "calendarright"
-calendarright.id = "calendarright"
-
-const calendarheaderleft = document.createElement('div')
-calendarheaderleft.className = "calendarheaderleft"
-calendarheaderleft.id = "calendarheaderleft"
-
-const calendarheaderright = document.createElement('div')
-calendarheaderright.className = "calendarheaderright calendarrow"
-calendarheaderright.id = "calendarheaderright"
-
-const calendarbodyleft = document.createElement('div')
-calendarbodyleft.className = "calendarbodyleft"
-calendarbodyleft.id = "calendarbodyleft"
-
-const calendarbodyright = document.createElement('div')
-calendarbodyright.className = "calendarbodyright"
-calendarbodyright.id = "calendarbodyright"
+const calendarleft = createNewElementCustom('div', 'calendarleft', 'calendarleft')
+const calendarright = createNewElementCustom('div', 'calendarright', 'calendarright')
+const calendarheaderleft = createNewElementCustom('div', 'calendarheaderleft', 'calendarheaderleft')
+const calendarheaderright = createNewElementCustom('div', "calendarheaderright calendarrow", "calendarheaderright")
+const calendarbodyleft = createNewElementCustom('div', "calendarbodyleft", "calendarbodyleft")
+const calendarbodyright = createNewElementCustom("div", "calendarbodyright", "calendarbodyright")
 
 calendar.append(calendarleft)
 calendar.append(calendarright)
@@ -124,8 +83,7 @@ calendarright.append(calendarbodyright)
 ////////////////////////// CALLED FIRST, SETS UP LEFT HAND COLUMN OF CALENDAR
 
 // creates a date div at the top of the pitchtitlecolumn
-let pitchtitlecolumnheader = document.createElement('div')
-pitchtitlecolumnheader.className = "pitchtitle pitchtitleheader calendaritem"
+let pitchtitlecolumnheader = createNewElementCustom("div", "pitchtitle pitchtitleheader calendaritem")
 calendarheaderleft.append(pitchtitlecolumnheader)
 
 // get list of pitch types from server
@@ -149,7 +107,7 @@ async function fetchpitches() {
 async function setupcalendarrowtitles() {
     let pitchtypes = await fetchpitchtypes()
     let pitches = await fetchpitches()
-
+    
     // add the pitches to the pitcharray[]
     for (let i = 0; i < pitches.length; i++) {
         let pitch = {
@@ -159,20 +117,14 @@ async function setupcalendarrowtitles() {
         pitcharray.push(pitch)
     }
 
-    
-
     // add a div of rows to left & right of calendar for each pitchtype
     for (let i = 0; i < pitchtypes.length; i++) {
-        let pitchtyperowheaderdiv = document.createElement("div")
-        pitchtyperowheaderdiv.className = "pitchtyperowheaderdiv"
-        pitchtyperowheaderdiv.id = `pitchtyperowheader-${pitchtypes[i].id}`
+        let pitchtyperowheaderdiv = createNewElementCustom("div", "pitchtyperowheaderdiv", `pitchtyperowheader-${pitchtypes[i].id}`)
         pitchtyperowheaderdiv.innerHTML = `<p data-id="${pitchtypes[i].id}" class="pitchtyperowheadertitle">${pitchtypes[i].name}</p>`
         calendarbodyleft.append(pitchtyperowheaderdiv)
 
         // create a div to hold the pitches independent of the pitch type title.
-        let pitchrowtitleholder = document.createElement("div")
-        pitchrowtitleholder.className = "pitchrowtitleholder"
-        pitchrowtitleholder.id = `pitchrowtitleholder-${pitchtypes[i].id}`
+        let pitchrowtitleholder = createNewElementCustom("div", "pitchrowtitleholder", `pitchrowtitleholder-${pitchtypes[i].id}`)
         pitchrowtitleholder.dataset.id = pitchtypes[i].id
         pitchtyperowheaderdiv.append(pitchrowtitleholder)
 
