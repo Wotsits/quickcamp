@@ -4,7 +4,44 @@ JS for calendar.html
 
 //////////////////////// HELPER FUNCTION
 
-import {rfc3339, createNewElementCustom} from './helpers/helpers.js'
+//import {rfc3339, createNewElementCustom} from './helpers/helpers.js'
+function rfc3339(d) {
+    
+    function pad(n) {
+        return n < 10 ? "0" + n : n;
+    }
+
+    function timezoneOffset(offset) {
+        let sign;
+        if (offset === 0) {
+            return "Z";
+        }
+        sign = (offset > 0) ? "-" : "+";
+        offset = Math.abs(offset);
+        return sign + pad(Math.floor(offset / 60)) + ":" + pad(offset % 60);
+    }
+
+    return d.getFullYear() + "-" +
+        pad(d.getMonth() + 1) + "-" +
+        pad(d.getDate()) + "T" +
+        pad(d.getHours()) + ":" +
+        pad(d.getMinutes()) + ":" +
+        pad(d.getSeconds()) + 
+        timezoneOffset(d.getTimezoneOffset());
+}
+
+function createNewElementCustom(type, className="", id="") {
+    const element = document.createElement(type)
+    if (!(className === "")) {
+        element.className = className
+    }
+    if (!(id === 0)){
+        element.id = id
+    }
+    return (element)
+}
+
+
 
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
@@ -128,9 +165,7 @@ async function setupcalendarrowtitles() {
         pitchrowtitleholder.dataset.id = pitchtypes[i].id
         pitchtyperowheaderdiv.append(pitchrowtitleholder)
 
-        let pitchrowholder = document.createElement("div")
-        pitchrowholder.className = "pitchrowholder"
-        pitchrowholder.id = `pitchrowholder-${pitchtypes[i].id}`
+        let pitchrowholder = createNewElementCustom("div", "pitchrowholder", `pitchrowholder-${pitchtypes[i].id}`)
         pitchrowholder.dataset.id = pitchtypes[i].id
         pitchrowholder.innerHTML = `<p data-id="${pitchtypes[i].id}" class="pitchdivspacer"></p>`
         calendarbodyright.append(pitchrowholder)
@@ -271,9 +306,7 @@ function fetchbookings() {
 
                     // give the elements some data attributes that are used later. 
                     element.setAttribute("data-bookingid", bookingid)
-
-                    element.setAttribute("data-originalcolor", element.style.backgroundColor)
-                                        
+                    element.setAttribute("data-originalcolor", element.style.backgroundColor)        
                     element.setAttribute("onclick", `selectbooking(${data[i].id})`)
 
                 
@@ -310,8 +343,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadbackward()
     calendarinfinitescroll()
     endloadspinner()
-    
-
 })
 
 /* -------------------------------------------------------------- */
@@ -553,7 +584,7 @@ function loadforward() {
                 calendaritem.className = "calendaritem calendarbodyitem"
                 calendaritem.setAttribute("data-pitch", pitchid)
                 calendaritem.setAttribute("data-date", Date.parse(forwardDates[j]))
-                calendaritem.setAttribute("onclick", "launchcreatenewbooking(this)")
+                calendaritem.setAttribute("onclick",  "launchcreatenewbooking(this)")
                 element.append(calendaritem)
             }
         }
@@ -2053,7 +2084,7 @@ function reloadwholecalendar() {
     document.querySelectorAll(".calendarbodyitem").forEach((element) => {
         element.innerHTML = ""
         element.className = "calendaritem calendarbodyitem"
-        element.setAttribute("onclick", "launchcreatenewbooking(this)")
+        element.addEventListener("click", () => {launchcreatenewbooking(element)})
         element.removeAttribute("data-bookingid")
         element.removeAttribute("data-originalcolor")
         element.removeAttribute("style")
