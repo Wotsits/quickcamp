@@ -4,7 +4,97 @@ JS for calendar.html
 
 //////////////////////// HELPER FUNCTION
 
-import {rfc3339, createNewElementCustom, closepane, closepaneandreloadbookingpane, startloadspinner, endloadspinner} from './helpers/helpers.js'
+/////////File defines helper functions used globally and imported.
+
+export function rfc3339(d) {
+    
+    function pad(n) {
+        return n < 10 ? "0" + n : n;
+    }
+
+    function timezoneOffset(offset) {
+        let sign;
+        if (offset === 0) {
+            return "Z";
+        }
+        sign = (offset > 0) ? "-" : "+";
+        offset = Math.abs(offset);
+        return sign + pad(Math.floor(offset / 60)) + ":" + pad(offset % 60);
+    }
+
+    return d.getFullYear() + "-" +
+        pad(d.getMonth() + 1) + "-" +
+        pad(d.getDate()) + "T" +
+        pad(d.getHours()) + ":" +
+        pad(d.getMinutes()) + ":" +
+        pad(d.getSeconds()) + 
+        timezoneOffset(d.getTimezoneOffset());
+}
+
+export function createNewElementCustom(type, className="", id="", name="") {
+    const element = document.createElement(type)
+    if (!(className === "")) {
+        element.className = className
+    }
+    if (!(id === 0)){
+        element.id = id
+    }
+    if(!(name === "")) {
+        element.name = name
+    }
+    return (element)
+}
+
+//////////////////////// GLOBAL VARIABLE INITIALISATION
+
+const body = document.querySelector("body")
+const csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value
+
+///////////////////////// CLOSES PANE 
+
+function closepane(elementid) {
+    document.querySelector(`#${elementid}`).remove()
+}
+
+function closepaneandreloadbookingpane(bookingid) {
+    
+    //this function is used by multiple panes so they wont all exist on the page. 
+    try {
+        document.querySelector('#partypanewrapper').remove()
+    }
+    catch {}
+    
+    try {
+        document.querySelector('#paymentdetailswrapper').remove()
+    }
+    catch {}
+    
+    document.querySelector('#bookingpanewrapper').remove()
+    reloadwholecalendar()
+    displaybookingpane(bookingid)
+}
+
+function startloadspinner() {
+    const loadspinnerwrapper = document.createElement("div")
+    loadspinnerwrapper.className = "panewrapper"
+    loadspinnerwrapper.id = "loadspinnerwrapper"
+    const loadspinner = document.createElement("div")
+    loadspinner.innerHTML = '<div class="lds-ring"><div></div><div></div><div></div><div></div></div>'
+    body.append(loadspinnerwrapper)
+    loadspinnerwrapper.append(loadspinner)
+}
+
+function endloadspinner() {
+    document.querySelector("#loadspinnerwrapper").remove()
+}
+
+
+
+
+
+
+
+
 
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
@@ -14,10 +104,6 @@ import {rfc3339, createNewElementCustom, closepane, closepaneandreloadbookingpan
 let selectedbooking = ""
 let selectstate = false
 
-//////////////////////// GLOBAL VARIABLE INITIALISATION
-
-const body = document.querySelector("body")
-const csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value
 
 /////// WHAT IS TODAY IN THE EYES OF THE CALENDAR
 
@@ -203,7 +289,7 @@ function setupcalendarbody() {
             day.innerHTML = "<p></p>"
             day.setAttribute("data-pitch", pitcharray[i].name)
             day.setAttribute("data-date", Date.parse(datearray[j]))
-            day.addEventListener('click', launchcreatenewbooking.bind(this, day))
+            day.addEventListener('click', handlelaunchcreatenewbooking)
             pitch.append(day)
         }
 
@@ -291,8 +377,8 @@ function fetchbookings() {
                         }
                     }
                     element.classList.add('clickable')
-                    element.removeEventListener('click', launchcreatenewbooking.bind(this, element))
-                    element.addEventListener('click', selectbooking.bind(this, data[i].id))
+                    element.removeEventListener('click', handlelaunchcreatenewbooking)
+                    element.addEventListener('click', handleselectbooking)
 
                 }
                 
@@ -398,9 +484,8 @@ function selectbooking(bookingid) {
     }
 }
 
-function handleselectbooking(bookingid) {
-    console.log("called")
-    selectbooking(bookingid)
+function handleselectbooking(event) {
+    selectbooking(event.target.dataset.bookingid)
 }
 
 ////////////////////////// MOVE BOOKING FUNCTIONALITY
@@ -502,7 +587,7 @@ function loadbackward() {
                 calendaritem.setAttribute("data-pitch", pitchid)
                 calendaritem.setAttribute("data-date", Date.parse(forwardDates[j]))
                 element.prepend(calendaritem)
-                calendaritem.addEventListener('click', launchcreatenewbooking.bind(this, calendaritem))
+                calendaritem.addEventListener('click', handlelaunchcreatenewbooking)
             }
         }
 
@@ -565,7 +650,7 @@ function loadforward() {
                 calendaritem.setAttribute("data-pitch", pitchid)
                 calendaritem.setAttribute("data-date", Date.parse(forwardDates[j]))
                 element.append(calendaritem)
-                calendaritem.addEventListener('click', launchcreatenewbooking.bind(this, calendaritem))
+                calendaritem.addEventListener('click', handlelaunchcreatenewbooking)
             }
         }
     })
@@ -1313,8 +1398,8 @@ function updateStayDuration(bookingid) {
 
 ///////////////////////// NEW BOOKING CREATION
 
-function handlelaunchcreatenewbooking(element) {
-    launchcreatenewbooking(element)
+function handlelaunchcreatenewbooking(event) {
+    launchcreatenewbooking(event.target)
 }
 
 // variable to hold array of available pitches
@@ -2061,7 +2146,7 @@ export function reloadwholecalendar() {
     document.querySelectorAll(".calendarbodyitem").forEach((element) => {
         element.innerHTML = ""
         element.className = "calendaritem calendarbodyitem"
-        element.addEventListener('click', launchcreatenewbooking.bind(this, element))        
+        element.addEventListener('click', handlelaunchcreatenewbooking)        
         element.removeAttribute("data-bookingid")
         element.removeAttribute("data-originalcolor")
         element.removeAttribute("style")
