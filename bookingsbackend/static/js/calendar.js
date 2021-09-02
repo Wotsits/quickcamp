@@ -4,52 +4,20 @@ JS for calendar.html
 
 //////////////////////// HELPER FUNCTION
 
-//import {rfc3339, createNewElementCustom} from './helpers/helpers.js'
-function rfc3339(d) {
-    
-    function pad(n) {
-        return n < 10 ? "0" + n : n;
-    }
-
-    function timezoneOffset(offset) {
-        let sign;
-        if (offset === 0) {
-            return "Z";
-        }
-        sign = (offset > 0) ? "-" : "+";
-        offset = Math.abs(offset);
-        return sign + pad(Math.floor(offset / 60)) + ":" + pad(offset % 60);
-    }
-
-    return d.getFullYear() + "-" +
-        pad(d.getMonth() + 1) + "-" +
-        pad(d.getDate()) + "T" +
-        pad(d.getHours()) + ":" +
-        pad(d.getMinutes()) + ":" +
-        pad(d.getSeconds()) + 
-        timezoneOffset(d.getTimezoneOffset());
-}
-
-function createNewElementCustom(type, className="", id="") {
-    const element = document.createElement(type)
-    if (!(className === "")) {
-        element.className = className
-    }
-    if (!(id === 0)){
-        element.id = id
-    }
-    return (element)
-}
-
-
+import {rfc3339, createNewElementCustom, closepane, closepaneandreloadbookingpane, startloadspinner, endloadspinner} from './helpers/helpers.js'
 
 //////////////////////// GLOBAL VARIABLE INITIALISATION
 
 "use strict"
 
-// Global variable initialisation for selectbooking() function
+// variable initialization for selectbooking() functionality.
 let selectedbooking = ""
 let selectstate = false
+
+//////////////////////// GLOBAL VARIABLE INITIALISATION
+
+const body = document.querySelector("body")
+const csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value
 
 /////// WHAT IS TODAY IN THE EYES OF THE CALENDAR
 
@@ -235,7 +203,7 @@ function setupcalendarbody() {
             day.innerHTML = "<p></p>"
             day.setAttribute("data-pitch", pitcharray[i].name)
             day.setAttribute("data-date", Date.parse(datearray[j]))
-            day.setAttribute("onclick", "launchcreatenewbooking(this)")
+            day.addEventListener('click', launchcreatenewbooking.bind(this, day))
             pitch.append(day)
         }
 
@@ -306,9 +274,7 @@ function fetchbookings() {
 
                     // give the elements some data attributes that are used later. 
                     element.setAttribute("data-bookingid", bookingid)
-                    element.setAttribute("data-originalcolor", element.style.backgroundColor)        
-                    element.setAttribute("onclick", `selectbooking(${data[i].id})`)
-
+                    element.setAttribute("data-originalcolor", element.style.backgroundColor)      
                 
                     // check if the booking is selected
                     if (selectstate === true && bookingid === selectedbooking) {
@@ -325,6 +291,9 @@ function fetchbookings() {
                         }
                     }
                     element.classList.add('clickable')
+                    element.removeEventListener('click', launchcreatenewbooking.bind(this, element))
+                    element.addEventListener('click', selectbooking.bind(this, data[i].id))
+
                 }
                 
             })
@@ -357,16 +326,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 ////////////////////////// SELECT BOOKING FUNCTIONALITY
 
-// variable initialization for select booking functionality.
-
 const displaybutton = document.querySelector("#displaybutton")
 const movebutton = document.querySelector("#movebutton")
 const controlpanel = document.querySelector("#controlpanel")
 
+function handledisplaybookingpane() {
+    displaybookingpane(selectedbooking)
+}
+
+function handlemovebooking() {
+    movebooking(selectedbooking)
+}
+
 function selectbooking(bookingid) {
     
     // grabs each pitch-day from calendar
-    let bookingblocksoncalendar = document.querySelectorAll(".calendarbodyitem")
+    const bookingblocksoncalendar = document.querySelectorAll(".calendarbodyitem")
 
     // conditional first checks if a different booking is already selected
     if ((!(selectedbooking === bookingid)) && selectstate === true) {
@@ -380,16 +355,14 @@ function selectbooking(bookingid) {
         })
         
         // resets the controlpanel buttons (poss not necessary)
-        displaybutton.removeAttribute("onclick")
         displaybutton.setAttribute("disabled", true)
-        movebutton.removeAttribute("onclick")
         movebutton.setAttribute("disabled", true)
 
         // resets the selectstate to false
         selectstate = false
     }
 
-    // sets the value of the selected booking var to match the clicked booking
+    // sets the value of the selected booking variable to match the clicked booking
     selectedbooking = bookingid
    
     // checks each pitch-day to see if they are the selected booking and if update their state & colour
@@ -408,19 +381,26 @@ function selectbooking(bookingid) {
         }
     })
 
+    
+
     // edit button components dependant on state.
     if (selectstate) {
-        displaybutton.setAttribute("onclick", `displaybookingpane(${bookingid})`)
+        displaybutton.addEventListener('click', handledisplaybookingpane)
         displaybutton.removeAttribute("disabled")
-        movebutton.setAttribute("onclick", `movebooking(${bookingid})`)
+        movebutton.addEventListener('click', handlemovebooking)
         movebutton.removeAttribute("disabled")
     } 
     else {
-        displaybutton.removeAttribute("onclick")
+        displaybutton.removeEventListener('click', handledisplaybookingpane)
         displaybutton.setAttribute("disabled", true)
-        movebutton.removeAttribute("onclick")
+        movebutton.removeEventListener('click', handlemovebooking)
         movebutton.setAttribute("disabled", true)
     }
+}
+
+function handleselectbooking(bookingid) {
+    console.log("called")
+    selectbooking(bookingid)
 }
 
 ////////////////////////// MOVE BOOKING FUNCTIONALITY
@@ -521,8 +501,8 @@ function loadbackward() {
                 calendaritem.className = "calendaritem calendarbodyitem"
                 calendaritem.setAttribute("data-pitch", pitchid)
                 calendaritem.setAttribute("data-date", Date.parse(forwardDates[j]))
-                calendaritem.setAttribute("onclick", "launchcreatenewbooking(this)")
                 element.prepend(calendaritem)
+                calendaritem.addEventListener('click', launchcreatenewbooking.bind(this, calendaritem))
             }
         }
 
@@ -584,8 +564,8 @@ function loadforward() {
                 calendaritem.className = "calendaritem calendarbodyitem"
                 calendaritem.setAttribute("data-pitch", pitchid)
                 calendaritem.setAttribute("data-date", Date.parse(forwardDates[j]))
-                calendaritem.setAttribute("onclick",  "launchcreatenewbooking(this)")
                 element.append(calendaritem)
+                calendaritem.addEventListener('click', launchcreatenewbooking.bind(this, calendaritem))
             }
         }
     })
@@ -638,13 +618,8 @@ function calendarinfinitescroll() {
 
 function displaybookingpane(bookingid) {
     // build the booking pane wrapper and element.
-    let bookingpanewrapper = document.createElement('div')
-    bookingpanewrapper.className = "panewrapper"
-    bookingpanewrapper.id = "bookingpanewrapper"
-
-    let bookingpane = document.createElement('div')
-    bookingpane.id = 'bookingpane'
-    bookingpane.className = "pane"
+    let bookingpanewrapper = createNewElementCustom("div", "panewrapper", "bookingpanewrapper")
+    let bookingpane = createNewElementCustom("div", "pane", "bookingpane")
 
     // fetch the booking details from the server.
     fetch(`booking/${bookingid}`, {
@@ -674,7 +649,7 @@ function displaybookingpane(bookingid) {
 
         // build the booking pane content.
         bookingpane.innerHTML = `
-            <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
+            <p id="closebookingpane" class="closebutton"><i class="far fa-times-circle"></i></p>
             <h3 id="bookingpanetitle">Booking ${bookingid}</h3>
             <div id="message" class="messagediv"></div>
             <div id="importantbookingcomments" class="messagediv"></div>
@@ -717,9 +692,11 @@ function displaybookingpane(bookingid) {
                 <button id="loadcommentsbutton" class="btn btn-secondary">View Comments</button>
             </div>
             `
+        
         // compile the display
         bookingpanewrapper.append(bookingpane)
         body.append(bookingpanewrapper)
+        bookingpane.querySelector('#closebookingpane').addEventListener('click', () => {closepane("bookingpanewrapper")})
 
         // if balance is not zero, style accordingly.
         if (balance > 0) {
@@ -881,7 +858,7 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
     partypane.id = "partypane"
     partypane.className = "pane"
     partypane.innerHTML = `
-        <p class="closebutton"><i class="far fa-times-circle" onclick=closepaneandreloadbookingpane(${bookingid})></i></p>
+        <p id="partypaneclosebutton" class="closebutton"><i class="far fa-times-circle"></i></p>
         <h3>Party Details</h3>
         <div id="messagediv"></div>
         <div id="partydetails">
@@ -937,6 +914,7 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
     body.append(partypanewrapper)
     partypanewrapper.append(partypane)
 
+    partypane.querySelector("#partypaneclosebutton").addEventListener("click", () => {closepaneandreloadbookingpane()})
     const partydetailstablebody = document.querySelector("#partydetailstablebody")
 
     // catch booking with no party members
@@ -1335,6 +1313,10 @@ function updateStayDuration(bookingid) {
 
 ///////////////////////// NEW BOOKING CREATION
 
+function handlelaunchcreatenewbooking(element) {
+    launchcreatenewbooking(element)
+}
+
 // variable to hold array of available pitches
 let availablepitches = ""
 // instantiate variable to hold preferred pitch which controls the create booking pane default pitch option
@@ -1347,17 +1329,11 @@ function launchcreatenewbooking(element) {
     start = new Date(parseInt(start))
     start = start.toISOString().substring(0, 10)
     
-    let bookingpanewrapper = document.createElement('div')
-    bookingpanewrapper.className = "panewrapper"
-    bookingpanewrapper.id = "bookingpanewrapper"
-
-    let bookingpane = document.createElement('div')
-    bookingpane.id = 'bookingpane'
-    bookingpane.className = "pane"
-
+    let bookingpanewrapper = createNewElementCustom("div", "panewrapper", "bookingpanewrapper")
+    let bookingpane = createNewElementCustom("div", "pane", "bookingpane")
 
     bookingpane.innerHTML = `
-        <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(bookingpanewrapper)></i></p>
+        <p id="closebookingpane" class="closebutton"><i class="far fa-times-circle"></i></p>
         <h3>New Booking</h3>
         <hr>
         <div id="rateselectdiv" class="btn-group" role="group" aria-label="Select rate group"></div>
@@ -1517,6 +1493,7 @@ function launchcreatenewbooking(element) {
     
     bookingpanewrapper.append(bookingpane)
     body.append(bookingpanewrapper)
+    bookingpane.querySelector("#closebookingpane").addEventListener('click', () => {closepane("bookingpanewrapper")})
     let rateselectdiv = document.querySelector("#rateselectdiv")
 
     //grab the available rate types.
@@ -2078,13 +2055,13 @@ function repositioncalendar() {
 }
 
 //this function reloads the whole calendar render when things have changed.  
-function reloadwholecalendar() {
+export function reloadwholecalendar() {
     startloadspinner()
     //reset the whole calandar to blank
     document.querySelectorAll(".calendarbodyitem").forEach((element) => {
         element.innerHTML = ""
         element.className = "calendaritem calendarbodyitem"
-        element.addEventListener("click", () => {launchcreatenewbooking(element)})
+        element.addEventListener('click', launchcreatenewbooking.bind(this, element))        
         element.removeAttribute("data-bookingid")
         element.removeAttribute("data-originalcolor")
         element.removeAttribute("style")
