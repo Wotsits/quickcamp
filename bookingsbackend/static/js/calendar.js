@@ -2,7 +2,7 @@
 JS for calendar.html
 */
 
-//////////////////////// HELPER FUNCTION
+//////////////////////// HELPER FUNCTIONS
 
 /////////File defines helper functions used globally and imported.
 
@@ -947,7 +947,7 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
         <h3>Party Details</h3>
         <div id="messagediv"></div>
         <div id="partydetails">
-            <h4>People <i onclick="addpartyitem(this, ${bookingid})" data-type="member" class="fas fa-plus-circle"></i></h4>
+            <h4>People <i id="addpartymemberbutton" data-bookingid=${bookingid} data-type="member" class="fas fa-plus-circle"></i></h4>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -964,7 +964,7 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
             </div>
         </div>
         <div id="partypets">
-            <h4>Pets <i onclick="addpartyitem(this, ${bookingid})" data-type="pet" class="fas fa-plus-circle"></i></h4>
+            <h4>Pets <i id="addpartypetbutton" data-bookingid=${bookingid} data-type="pet" class="fas fa-plus-circle"></i></h4>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -979,7 +979,7 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
             </div>
         </div>
         <div id="partyvehicles">
-            <h4>Vehicles <i onclick="addpartyitem(this, ${bookingid})" data-type="vehicle" class="fas fa-plus-circle"></i></h4>
+            <h4>Vehicles <i id="addpartyvehiclebutton" data-bookingid=${bookingid} data-type="vehicle" class="fas fa-plus-circle"></i></h4>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -998,6 +998,9 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
     //comile them on the screen
     body.append(partypanewrapper)
     partypanewrapper.append(partypane)
+    partypane.querySelector('#addpartymemberbutton').addEventListener('click', addpartyitem)
+    partypane.querySelector('#addpartypetbutton').addEventListener('click', addpartyitem)
+    partypane.querySelector('#addpartyvehiclebutton').addEventListener('click', addpartyitem)
 
     partypane.querySelector("#partypaneclosebutton").addEventListener("click", () => {closepaneandreloadbookingpane()})
     const partydetailstablebody = document.querySelector("#partydetailstablebody")
@@ -1134,11 +1137,13 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
 
 
 
-function addpartyitem(element, bookingid) {
+function addpartyitem(event) {
     
     startloadspinner()
+    const element = event.target 
     
     let itemtypetobeadded = element.dataset.type
+    let bookingid = element.dataset.bookingid
 
     let payload = {
         "bookingid"       : bookingid,
@@ -1426,7 +1431,7 @@ function launchcreatenewbooking(element) {
         <form autocomplete="off">
             <h5>Lead Guest</h5>
             <div id='guestsearch' class="form-floating mb-3">
-                <input type="text" autocomplete="chrome-off" autofocus id="searchparam" class="form-control" onkeyup=guestsearch(this) autocomplete="off" placeholder="Email Address">
+                <input type="text" autocomplete="chrome-off" autofocus id="searchparam" class="form-control" autocomplete="off" placeholder="Email Address">
                 <label for="searchparam">Email Address</label>
             </div>
             <div id="guestselect">
@@ -1439,26 +1444,26 @@ function launchcreatenewbooking(element) {
             <h5>Unit</h5>
             <div id="unitselect" class="optionselect">
                 
-                <input type="radio" class="btn-check" name="unit-select" id="van" autocomplete="off" value="van" onchange=resetavailablepitches(${preferredpitch}) required>
+                <input type="radio" class="btn-check activatesresetavailablepitches" name="unit-select" id="van" autocomplete="off" value="van") required>
                 <label class="btn btn-outline-success unitselectbutton" for="van"><i class="fas fa-shuttle-van large"></i></label>
 
-                <input type="radio" class="btn-check" name="unit-select" id="caravan" autocomplete="off" value="caravan" onchange=resetavailablepitches(${preferredpitch})>
+                <input type="radio" class="btn-check activatesresetavailablepitches" name="unit-select" id="caravan" autocomplete="off" value="caravan">
                 <label class="btn btn-outline-success unitselectbutton" for="caravan"><i class="fas fa-caravan large"></i></label>
 
-                <input type="radio" class="btn-check" name="unit-select" id="trailertent" autocomplete="off" value="trailertent" onchange=resetavailablepitches(${preferredpitch})>
+                <input type="radio" class="btn-check activatesresetavailablepitches" name="unit-select" id="trailertent" autocomplete="off" value="trailertent">
                 <label class="btn btn-outline-success unitselectbutton" for="trailertent"><i class="fas fa-trailer large"></i></label>
 
-                <input type="radio" class="btn-check" name="unit-select" id="tent" autocomplete="off" value="tent" onchange=resetavailablepitches(${preferredpitch})>
+                <input type="radio" class="btn-check activatesresetavailablepitches" name="unit-select" id="tent" autocomplete="off" value="tent">
                 <label class="btn btn-outline-success unitselectbutton" for="tent"><i class="fas fa-campground large"></i></label>
 
             </div>
 
             <div id="sizeselect" class="optionselect">
             
-                <input type="radio" class="btn-check" name="size-select" id="large" autocomplete="off" value="large" onchange=resetavailablepitches(${preferredpitch}) required>
+                <input type="radio" class="btn-check activatesresetavailablepitches" name="size-select" id="large" autocomplete="off" value="large") required>
                 <label class="btn btn-outline-secondary unitselectbutton" for="large">Large</label>
 
-                <input type="radio" class="btn-check" name="size-select" id="small" autocomplete="off" value="small" onchange=resetavailablepitches(${preferredpitch})>
+                <input type="radio" class="btn-check activatesresetavailablepitches" name="size-select" id="small" autocomplete="off" value="small">
                 <label class="btn btn-outline-secondary unitselectbutton" for="small">Small</label>
             </div>
 
@@ -1478,13 +1483,13 @@ function launchcreatenewbooking(element) {
             <div class="row">
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input type="date" class="form-control" id="arrival" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Arrival Date" value="${start}" required>
+                        <input type="date" class="form-control activatesresetavailablepitches activatesrecalculate" id="arrival" placeholder="Arrival Date" value="${start}" required>
                         <label for="arrival">Arrival Date: </label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input type="date" class="form-control" id="departure" onchange=recalculate() onblur=resetavailablepitches(${preferredpitch}) placeholder="Departure Date" required>
+                        <input type="date" class="form-control activatesresetavailablepitches activatesrecalculate" id="departure" placeholder="Departure Date" required>
                         <label for="departure">Departure Date: </label>
                     </div>
                 </div>
@@ -1504,19 +1509,19 @@ function launchcreatenewbooking(element) {
             <div class="row">
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="adultno" placeholder="Adults" required>
+                        <input class="form-control activatesrecalculate" type="text" id="adultno" placeholder="Adults" required>
                         <label for="adultno">Adults</label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="childno" placeholder="Children" required>
+                        <input class="form-control activatesrecalculate" type="text" id="childno" placeholder="Children" required>
                         <label for="childno">Children</label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="infantno" placeholder="Infants" required>
+                        <input class="form-control activatesrecalculate" type="text" id="infantno" placeholder="Infants" required>
                         <label for="infantno">Infants</label>
                     </div>
                 </div>
@@ -1525,13 +1530,13 @@ function launchcreatenewbooking(element) {
             <div class="row">
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="petno" placeholder="Pets" required>
+                        <input class="form-control activatesrecalculate" type="text" id="petno" placeholder="Pets" required>
                         <label for="petno">Pets</label>
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
-                        <input onchange=recalculate() class="form-control" type="text" id="vehicleno" placeholder="vehicle" required>
+                        <input class="form-control activatesrecalculate" type="text" id="vehicleno" placeholder="vehicle" required>
                         <label for="vehicleno">Vehicles</label>
                     </div>
                 </div>
@@ -1571,15 +1576,27 @@ function launchcreatenewbooking(element) {
                 </div>
             </div>
 
-            <button id="submitnewbookingbutton" class="btn btn-secondary" onclick=createnewbooking() disabled>Submit</button>
+            <button id="submitnewbookingbutton" class="btn btn-secondary" disabled>Submit</button>
         
         </form>
         `
     
     bookingpanewrapper.append(bookingpane)
     body.append(bookingpanewrapper)
+
+    //Event listeners attached to form.  
     bookingpane.querySelector("#closebookingpane").addEventListener('click', () => {closepane("bookingpanewrapper")})
+    bookingpane.querySelector("#searchparam").addEventListener("keyup", guestsearch)
+    bookingpane.querySelectorAll(".activatesresetavailablepitches").forEach(element => {
+        element.addEventListener('change', resetavailablepitches.bind(this, preferredpitch))
+    })
+    bookingpane.querySelectorAll(".activatesrecalculate").forEach(element => {
+        element.addEventListener('change', recalculate)
+    })
+    bookingpane.querySelector('#submitnewbookingbutton').addEventListener('click', createnewbooking)
+
     let rateselectdiv = document.querySelector("#rateselectdiv")
+
 
     //grab the available rate types.
     fetch('fetchratetypes', {
@@ -1619,10 +1636,10 @@ function setrate(button) {
     recalculate()
 }
 
-function guestsearch(element) {
+function guestsearch(event) {
     let searchresultsdiv = document.querySelector('#searchresultsdiv')
     searchresultsdiv.innerHTML = ""
-    let searchparam = element.value
+    let searchparam = event.target.value
     if (searchparam.length == 0) {
         return
     }
@@ -1633,13 +1650,15 @@ function guestsearch(element) {
         if (data.length > 0) {
             for (let i=0; i < data.length; i++) {
                 let result = document.createElement('div')
-                result.innerHTML = `<p data-id="${data[i].id}" onclick=selectguest(this)>${data[i].firstname} ${data[i].surname} - ${data[i].email}</p>`
+                result.innerHTML = `<p data-id="${data[i].id}">${data[i].firstname} ${data[i].surname} - ${data[i].email}</p>`
+                result.addEventListener("click", selectguest)
                 searchresultsdiv.append(result)
             }
         }
         else {
             let result = document.createElement('div')
-            result.innerHTML = `<p onclick=createnewguestform()>No existing guests found.  Click here to create one.</p>`
+            result.innerHTML = `<p>No existing guests found.  Click here to create one.</p>`
+            result.addEventListener("click", createnewguestform)
             searchresultsdiv.append(result)
         }
         
@@ -1647,7 +1666,8 @@ function guestsearch(element) {
 
 }
 
-function selectguest(element) {
+function selectguest(event) {
+    const element = event.target
     let customerid = element.getAttribute("data-id")
     let guestdetails = document.querySelector('#guestselect')
     guestdetails.innerHTML = ""
@@ -1706,11 +1726,12 @@ function createnewguestform() {
                 </div>
             </div>
             
-            <button type="button" class="btn btn-secondary" onclick=createguest()>Create New Lead Guest</button>
+            <button type="button" id="createguestbutton" class="btn btn-secondary">Create New Lead Guest</button>
 
 
         `
     document.querySelector('#guestsearch').remove()
+    document.querySelector("#createguestbutton").addEventListener("click", createguest)
 }
 
 //sends the new guest creation POST request to the server
