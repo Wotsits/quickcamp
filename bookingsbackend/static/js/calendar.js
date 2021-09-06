@@ -63,6 +63,16 @@ function closepaneandreloadbookingpane(bookingid) {
         document.querySelector('#partypanewrapper').remove()
     }
     catch {}
+
+    try {
+        document.querySelector('#commentspanewrapper').remove()
+    }
+    catch {}
+
+    try {
+        document.querySelector('#newcommentpanewrapper').remove()
+    }
+    catch {}
     
     try {
         document.querySelector('#paymentdetailswrapper').remove()
@@ -773,7 +783,7 @@ function displaybookingpane(bookingid) {
                 </fieldset>
             </div>
             <div class="controlbuttons">
-                <button class="btn btn-secondary" onclick=loadpaymentdetail(${bookingid})>View Payments Detail</button>
+                <button id="loadpaymentdetailbutton" class="btn btn-secondary" onclick=loadpaymentdetail(${bookingid})>View Payments Detail</button>
                 <button id="loadcommentsbutton" class="btn btn-secondary">View Comments</button>
             </div>
             `
@@ -782,6 +792,7 @@ function displaybookingpane(bookingid) {
         bookingpanewrapper.append(bookingpane)
         body.append(bookingpanewrapper)
         bookingpane.querySelector('#closebookingpane').addEventListener('click', () => {closepane("bookingpanewrapper")})
+        bookingpane.querySelector('#loadpaymentdetailbutton').addEventListener('click', loadpaymentdetail.bind(this, bookingid))
 
         // if balance is not zero, style accordingly.
         if (balance > 0) {
@@ -843,16 +854,18 @@ function loadcomments(bookingid, comments) {
     const commentspane = document.createElement("div")
     commentspane.id = "commentspane"
     commentspane.innerHTML = `
-        <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(commentspanewrapper)></i></p>
-        <h3>Booking Comments <i onclick=addcomment(${bookingid}) class="fas fa-plus-circle"></i></h3>
+        <p id="closecomments" class="closebutton"><i class="far fa-times-circle"></i></p>
+        <h3>Booking Comments <i id="addcomment" class="fas fa-plus-circle"></i></h3>
         `
     // compile it on screen
     body.append(commentspanewrapper)
     commentspanewrapper.append(commentspane)
+    commentspane.querySelector("#closecomments").addEventListener("click", closepane.bind(this, "commentspanewrapper"))
+    commentspane.querySelector("#addcomment").addEventListener("click", addcomment.bind(this, bookingid))
 
     // catch situations with no comments...
     if (comments.length === 0) {
-        commentitem = document.createElement("div")
+        const commentitem = document.createElement("div")
         commentitem.textContent = "There are no comments associated with this booking."
         commentspane.append(commentitem)
     }
@@ -881,7 +894,7 @@ function addcomment(bookingid, comments) {
     const newcommentpane = document.createElement("div");
     newcommentpane.id = "commentspane";
     newcommentpane.innerHTML = `
-        <p class="closebutton"><i class="far fa-times-circle" onclick=closepane(newcommentpanewrapper)></i></p>
+        <p id="closecommentpanewrapperbutton" class="closebutton"><i class="far fa-times-circle"></i></p>
         <h3>Add a New Comment</h3>
         <textarea id="newcommenttextarea" class="form-control" rows="3"></textarea>
         <div class="form-check">
@@ -890,11 +903,13 @@ function addcomment(bookingid, comments) {
                 Important
             </label>
         </div>
-        <button type="button" class="btn btn-secondary" onclick=createnewcomment(${bookingid})>Submit New Comment</button>
+        <button id="submitnewcommentbutton" type="button" class="btn btn-secondary">Submit New Comment</button>
         `
     
     body.append(newcommentpanewrapper);
     newcommentpanewrapper.append(newcommentpane);
+    newcommentpane.querySelector("#closecommentpanewrapperbutton").addEventListener("click", closepane.bind(this, "newcommentpanewrapper"))
+    newcommentpane.querySelector("#submitnewcommentbutton").addEventListener("click", createnewcomment.bind(this, bookingid))
 }
 
 function createnewcomment(bookingid) {
@@ -926,9 +941,7 @@ function createnewcomment(bookingid) {
     })    
     .then(data => {
         alert("New comment posted to booking.")
-        // reload the booking pane which should show new party numbers. 
-        closepane(bookingpanewrapper)
-        displaybookingpane(bookingid)
+        closepaneandreloadbookingpane(bookingid)
     })
 }
 
@@ -1002,7 +1015,7 @@ function loadparty(bookingstart, bookingend, bookingparty, bookingpets, bookingv
     partypane.querySelector('#addpartypetbutton').addEventListener('click', addpartyitem)
     partypane.querySelector('#addpartyvehiclebutton').addEventListener('click', addpartyitem)
 
-    partypane.querySelector("#partypaneclosebutton").addEventListener("click", () => {closepaneandreloadbookingpane()})
+    partypane.querySelector("#partypaneclosebutton").addEventListener("click", () => {closepaneandreloadbookingpane(bookingid)})
     const partydetailstablebody = document.querySelector("#partydetailstablebody")
 
     // catch booking with no party members
@@ -1956,7 +1969,12 @@ function loadpaymentdetail(bookingid) {
 
         let paymentdetails = document.createElement("div")
         paymentdetails.className = "paymentdetails"
-        paymentdetails.innerHTML = `<p class="closebutton" ><i class="far fa-times-circle" onclick=closepane(paymentdetailswrapper)></i></p><h2>Payment Details</h2><i onclick=addpayment(${bookingid}) class="fas fa-plus-circle"></i>`
+        paymentdetails.innerHTML = `
+            <p id="closepaymentdetailpanebutton" class="closebutton" >
+                <i class="far fa-times-circle"></i>
+            </p>
+            <h2>Payment Details</h2>
+            <i id="addpaymentbutton" class="fas fa-plus-circle"></i>`
         
         let paymentdetailstable = document.createElement("table")
         paymentdetailstable.className = "table table-striped"
@@ -1982,10 +2000,12 @@ function loadpaymentdetail(bookingid) {
                 <td>${data[i].id}</td>
                 <td>£${data[i].value}</td>
                 <td>${data[i].method}</td>
-                <td><i onclick='editpayment("${paymentcreationdate.toISOString().substring(0, 10)}", ${data[i].id}, ${data[i].value}, "${data[i].method}", ${bookingid})' class="fas fa-edit"></i> <i onclick='deletepayment(${data[i].id}, ${bookingid})' class="fas fa-trash-alt"></i></td>
+                <td><i id="editpayment${data[i].id}button" class="fas fa-edit"></i> <i id="deletepayment${data[i].id}button" class="fas fa-trash-alt"></i></td>
             `
             paymentdetailstablebody.append(payment)
-            }
+            paymentdetailstablebody.querySelector(`#editpayment${data[i].id}button`).addEventListener("click", editpayment.bind(this, `${paymentcreationdate.toISOString().substring(0, 10)}`, data[i].id, data[i].value, `${data[i].method}`, bookingid))
+            paymentdetailstablebody.querySelector(`#deletepayment${data[i].id}button`).addEventListener("click", deletepayment.bind(this, data[i].id, bookingid))    
+        }
 
         paymentdetailslayer.append(paymentdetails)
         paymentdetails.append(paymentdetailstable)
@@ -1993,6 +2013,8 @@ function loadpaymentdetail(bookingid) {
         paymentdetailstable.append(paymentdetailstablebody)
         body.append(paymentdetailslayer)
 
+        paymentdetails.querySelector('#closepaymentdetailpanebutton').addEventListener('click', closepane.bind(this, "paymentdetailswrapper"))
+        paymentdetails.querySelector('#addpaymentbutton').addEventListener('click', addpayment.bind(this, bookingid))
     })
 }
 
@@ -2009,8 +2031,9 @@ function editpayment(paymentcreationdate, paymentid, paymentvalue, paymentmethod
                 <option value="BACS">BACS</option>
             </select>
         </td>
-        <td><i onclick='savepayment(${paymentid}, ${bookingid})' class="fas fa-save"></i>Click to save changes</td>
+        <td><i id="payment${paymentid}savebutton" class="fas fa-save"></i>Click to save changes</td>
         `
+    payment.querySelector(`#payment${paymentid}savebutton`).addEventListener("click", savepayment.bind(this, paymentid, bookingid))
 }
 
 function savepayment(paymentid, bookingid) {
@@ -2077,11 +2100,13 @@ function addpayment(bookingid) {
                 <option value="BACS">BACS</option>
             </select>
         </td>
-        <td><i onclick=savenewpayment(${bookingid}) class="fas fa-save"></i> Click here to save payment</td>
+        <td><i id="savenewpaymentbutton" class="fas fa-save"></i> Click here to save payment</td>
         `
     let table = document.querySelector("#paymenttablebody")
     table.append(newpaymentline)
+    newpaymentline.querySelector('#savenewpaymentbutton').addEventListener("click", savenewpayment.bind(this, bookingid))
     document.querySelector("#newpaymentdate").valueAsDate = new Date() 
+
 }
 
 function savenewpayment(bookingid) {
